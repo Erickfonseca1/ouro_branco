@@ -1,0 +1,409 @@
+{
+  "_AVISO": "SPOILERS: este arquivo codifica os objetivos secretos de todos os papéis. Quem vai jogar não deve abri-lo.",
+  "_convencoes": {
+    "AVISO": "CONTÉM SPOILERS dos objetivos secretos. Não abra se você vai jogar. Os campos são abstrações numéricas; nenhum texto narrativo foi copiado.",
+    "fonte": "02-personagens-e-relacoes.md (marcos, 'Se a bifurcação fechar', atalhos dos arcos), 01-historia-base.md (turnos das bifurcações), 04-regras-e-jogabilidade.md (seções 2, 3 e 8).",
+    "campos": {
+      "id": "Papel-Variante-Marco, ex.: Coronel-A-1",
+      "tipo": "categoria abstrata do marco (contrato, contratos, bifurcacao, relogio, votacao, denuncia_janela, alvo_contrato_ou_denuncia, indicador, caixa, prestigio_e_contrato, ...)",
+      "acoes": "ações do dono (das 3 por turno) necessárias para cumprir o marco pelo caminho original. Em marcos de bifurcação são ações de influência gastas ANTES da resolução",
+      "custo": "₵ aproximados pagos (ou travados, no caso de patamar de caixa) pelo dono ao cumprir. Negativo = o marco paga ao dono (ex.: contrato em que o parceiro paga soldo)",
+      "coop": "true se precisa do acordo de outro jogador (contrato). Votos e desfechos de bifurcação estão em p_favoravel, não em coop",
+      "parceiros": "quantos acordos distintos são necessários (cada um rola p_coop)",
+      "turno_min": "primeiro turno (fim da resolução) em que o marco pode valer",
+      "bifurcacao": "id na tabela 'bifurcacoes' ou null; B2g = garantia de juros da ferrovia no fim do turno 8; Vconc/Vleil/Vanist = votações/leilões de um único interessado",
+      "desfecho_favoravel": "desfechos da bifurcação que cumprem o marco",
+      "modo_bifurcacao": "'evento': o marco só vale depois da resolução, se favorável; 'risco': o marco pode valer antes, mas cai se a resolução for desfavorável (usado também em estados verificados antes da resolução, ex.: 'sem garantia de juros a partir do fim do turno 8', que caem se a resolução de B2g for desfavorável)",
+      "p_condicional": "multiplicador extra (ex.: o desfecho precisa ainda de uma cláusula)",
+      "p_favoravel": "chance base do desfecho favorável = soma dos desfechos favoráveis × p_condicional (sem a influência dos jogadores)",
+      "atalho_acoes": "ações extras do caminho de recuperação se a bifurcação fechar (sempre exige outro jogador: rola p_coop)",
+      "atalho_turnos": "turnos mínimos após a resolução até o atalho poder valer",
+      "fragil_atalho": "fragilidade do marco quando cumprido por atalho (vira contrato: derrubável, doc. 04 §2.6)",
+      "prestigio_min": "★ exigida (faixas assumidas: Média 4–5, Alta 6–7, Eminente 8+). A diferença para o ★ inicial custa 1 ação e 3₵ por ponto",
+      "fragil": "0–1, facilidade de oponentes derrubarem o marco cumprido",
+      "evento_unico": "true se, cumprido pelo caminho original, não se perde",
+      "janela": "0 = estado permanente; N = o marco expira N turnos depois de cumprido (ex.: 'denúncia num dos últimos 3 turnos') e precisa ser refeito"
+    },
+    "regras_de_julgamento": [
+      "Contrato simples com qualquer jogador: 1 ação, coop. Contrato com cláusula onerosa, cessão de bens ou parceiro específico: 2 ações.",
+      "Alvo calado/contido 'por contrato OU denúncia com prova': 3 ações (investigar pista + chantagem ou denúncia), coop, turno_min 3 (pistas e ação secreta liberam no turno 2, Assembleia no 3).",
+      "Marco que só se cumpre por denúncia com prova recente: 3 ações, sem coop, janela 3, turno_min 3.",
+      "Bifurcação: 2–3 ações de influência; desfecho favorável com a chance base da tabela; quem investiu todas as ações inclina a bifurcação (ver marcos.py).",
+      "Patamar de caixa (provisório): 12–15₵ travados. Contratos com pagamento: 2–6₵. Suborno/denúncia: 3₵.",
+      "Fragilidade: evento único original 0 (cargo que pode cair 0.1–0.2); contrato 0.4–0.5; cláusula de silêncio que o alvo pode quebrar pagando multa 0.5; dois contratos ao mesmo tempo ou condição extra 'sem denúncia' 0.6–0.7; denúncia em janela 0.3; indicador público 0.4–0.6; Germinação do agente 0.05.",
+      "Formas genéricas de alvo e atalhos de carta de arco (turnos 5 e 9) não foram modelados separadamente, exceto quando cobrem bifurcação fechada.",
+      "B3 é resolvida como 'Relógio ≥ 5 no fim do turno 6' (germina) ou não (presa). Marcos 'com o turno 6 encerrado' foram lidos como verificáveis na resolução do turno 6.",
+      "Revisão de balanceamento (reivindicação a partir do turno 8): cada ajuste do texto do doc. 02 foi traduzido para os campos (ex.: 'as duas coisas no mesmo acordo' ou 'cláusula onerosa' = +1 ação; 'já ter pago a primeira parcela' ou 'entregue dois lotes' = +1 ou +2 ações; 'a partir do turno 8' = turno_min 8; 'num único contrato' no atalho = atalho_acoes 1; 'já no turno 9' = atalho_turnos 1; 'faixa Média' = prestigio_min 4; 'sem dinheiro' = custo reduzido).",
+      "Renda por papel recalibrada com economia.py (cenário 'Mesa oportunista', sem colapso, ganho médio de caixa do turno 1 ao 8) depois de exportador_compra 0.75 e exportador_limite 8: Exportador 6.0 → 3.0, Casa Aviadora 3.0 → 3.4, Coronel 1.0 → 0.8 (variação do ganho × 0.75, mesma escala da calibração anterior)."
+    ]
+  },
+  "bifurcacoes": {
+    "B1": {
+      "turno": 7,
+      "desfechos": {
+        "tratado": 0.35,
+        "armas": 0.25,
+        "independencia": 0.2,
+        "arrendamento": 0.2
+      }
+    },
+    "B2g": {
+      "turno": 9,
+      "desfechos": {
+        "com_garantia": 0.55,
+        "sem_garantia": 0.45
+      }
+    },
+    "B3": {
+      "turno": 6,
+      "desfechos": {
+        "germina": 0.55,
+        "presa": 0.45
+      }
+    },
+    "B4": {
+      "turno": 8,
+      "desfechos": {
+        "esmagada": 0.35,
+        "acordo": 0.4,
+        "revolta": 0.25
+      }
+    },
+    "B5": {
+      "turno": 6,
+      "desfechos": {
+        "continuidade": 0.45,
+        "oposicao": 0.35,
+        "intervencao": 0.2
+      }
+    },
+    "B7": {
+      "turno": 9,
+      "desfechos": {
+        "resiste": 0.4,
+        "falencia": 0.25,
+        "resgate": 0.2,
+        "cartel": 0.15
+      }
+    },
+    "Vconc": {
+      "turno": 6,
+      "desfechos": {
+        "sim": 0.55,
+        "nao": 0.45
+      }
+    },
+    "Vleil": {
+      "turno": 3,
+      "desfechos": {
+        "sim": 0.5,
+        "nao": 0.5
+      }
+    },
+    "Vanist": {
+      "turno": 7,
+      "desfechos": {
+        "sim": 0.5,
+        "nao": 0.5
+      }
+    }
+  },
+  "papeis": {
+    "Coronel": {
+      "prestigio": 4,
+      "caixa": 4,
+      "renda": 0.8,
+      "piloto": true
+    },
+    "Casa Aviadora": {
+      "prestigio": 4,
+      "caixa": 10,
+      "renda": 3.4,
+      "piloto": true
+    },
+    "Exportador": {
+      "prestigio": 4,
+      "caixa": 8,
+      "renda": 3.0,
+      "piloto": true
+    },
+    "Armador": {
+      "prestigio": 3,
+      "caixa": 5,
+      "renda": 4.5,
+      "piloto": true
+    },
+    "Governador": {
+      "prestigio": 5,
+      "caixa": 4,
+      "renda": 1.5,
+      "piloto": true
+    },
+    "Dono do jornal": {
+      "prestigio": 3,
+      "caixa": 5,
+      "renda": 2.0,
+      "piloto": true
+    },
+    "Caudilho": {
+      "prestigio": 2,
+      "caixa": 3,
+      "renda": 0.8,
+      "piloto": true
+    },
+    "Naturalista": {
+      "prestigio": 2,
+      "caixa": 3,
+      "renda": 1.0,
+      "piloto": true
+    },
+    "Engenheiro": {
+      "prestigio": 3,
+      "caixa": 6,
+      "renda": 2.0,
+      "piloto": false
+    },
+    "Lider seringueiro": {
+      "prestigio": 2,
+      "caixa": 2,
+      "renda": 0.8,
+      "piloto": false
+    },
+    "Bispo": {
+      "prestigio": 5,
+      "caixa": 4,
+      "renda": 1.5,
+      "piloto": false
+    },
+    "Contrabandista": {
+      "prestigio": 1,
+      "caixa": 4,
+      "renda": 2.0,
+      "piloto": false
+    },
+    "Consul": {
+      "prestigio": 4,
+      "caixa": 4,
+      "renda": 1.5,
+      "piloto": false
+    },
+    "Empresario": {
+      "prestigio": 3,
+      "caixa": 3,
+      "renda": 1.5,
+      "piloto": false
+    }
+  },
+  "variantes": [
+    {"id": "Coronel-A", "papel": "Coronel", "variante": "A", "marcos": [
+      {"id": "Coronel-A-1", "tipo": "bifurcacao", "acoes": 2, "custo": 3, "coop": false, "parceiros": 0, "turno_min": 8, "bifurcacao": "B4", "desfecho_favoravel": ["esmagada", "revolta"], "modo_bifurcacao": "evento", "p_condicional": 1.0, "p_favoravel": 0.6, "atalho_acoes": 1, "atalho_turnos": 1, "fragil_atalho": 0.5, "prestigio_min": 0, "fragil": 0.0, "evento_unico": true, "janela": 0},
+      {"id": "Coronel-A-2", "tipo": "contratos", "acoes": 2, "custo": 2, "coop": true, "parceiros": 2, "turno_min": 1, "bifurcacao": null, "desfecho_favoravel": null, "modo_bifurcacao": null, "p_condicional": 1.0, "p_favoravel": 0.5, "atalho_acoes": 0, "atalho_turnos": 0, "fragil_atalho": null, "prestigio_min": 0, "fragil": 0.6, "evento_unico": false, "janela": 0},
+      {"id": "Coronel-A-3", "tipo": "alvo_contrato_ou_denuncia", "acoes": 3, "custo": 3, "coop": true, "parceiros": 1, "turno_min": 3, "bifurcacao": null, "desfecho_favoravel": null, "modo_bifurcacao": null, "p_condicional": 1.0, "p_favoravel": 0.5, "atalho_acoes": 0, "atalho_turnos": 0, "fragil_atalho": null, "prestigio_min": 0, "fragil": 0.5, "evento_unico": false, "janela": 0}
+    ]},
+    {"id": "Coronel-B", "papel": "Coronel", "variante": "B", "marcos": [
+      {"id": "Coronel-B-1", "tipo": "contrato", "acoes": 3, "custo": 4, "coop": true, "parceiros": 1, "turno_min": 1, "bifurcacao": null, "desfecho_favoravel": null, "modo_bifurcacao": null, "p_condicional": 1.0, "p_favoravel": 0.5, "atalho_acoes": 0, "atalho_turnos": 0, "fragil_atalho": null, "prestigio_min": 0, "fragil": 0.5, "evento_unico": false, "janela": 0},
+      {"id": "Coronel-B-2", "tipo": "contrato", "acoes": 3, "custo": 0, "coop": true, "parceiros": 1, "turno_min": 1, "bifurcacao": null, "desfecho_favoravel": null, "modo_bifurcacao": null, "p_condicional": 1.0, "p_favoravel": 0.5, "atalho_acoes": 0, "atalho_turnos": 0, "fragil_atalho": null, "prestigio_min": 0, "fragil": 0.5, "evento_unico": false, "janela": 0},
+      {"id": "Coronel-B-3", "tipo": "contrato", "acoes": 2, "custo": 2, "coop": true, "parceiros": 1, "turno_min": 1, "bifurcacao": null, "desfecho_favoravel": null, "modo_bifurcacao": null, "p_condicional": 1.0, "p_favoravel": 0.5, "atalho_acoes": 0, "atalho_turnos": 0, "fragil_atalho": null, "prestigio_min": 0, "fragil": 0.6, "evento_unico": false, "janela": 0}
+    ]},
+    {"id": "Coronel-C", "papel": "Coronel", "variante": "C", "marcos": [
+      {"id": "Coronel-C-1", "tipo": "bifurcacao", "acoes": 3, "custo": 6, "coop": false, "parceiros": 0, "turno_min": 7, "bifurcacao": "B1", "desfecho_favoravel": ["tratado"], "modo_bifurcacao": "evento", "p_condicional": 1.0, "p_favoravel": 0.35, "atalho_acoes": 2, "atalho_turnos": 2, "fragil_atalho": 0.5, "prestigio_min": 0, "fragil": 0.0, "evento_unico": true, "janela": 0},
+      {"id": "Coronel-C-2", "tipo": "acao_e_contrato", "acoes": 2, "custo": 1, "coop": true, "parceiros": 1, "turno_min": 1, "bifurcacao": null, "desfecho_favoravel": null, "modo_bifurcacao": null, "p_condicional": 1.0, "p_favoravel": 0.5, "atalho_acoes": 0, "atalho_turnos": 0, "fragil_atalho": null, "prestigio_min": 0, "fragil": 0.5, "evento_unico": false, "janela": 0},
+      {"id": "Coronel-C-3", "tipo": "alvo_contrato_ou_denuncia", "acoes": 3, "custo": 3, "coop": true, "parceiros": 1, "turno_min": 3, "bifurcacao": null, "desfecho_favoravel": null, "modo_bifurcacao": null, "p_condicional": 1.0, "p_favoravel": 0.5, "atalho_acoes": 0, "atalho_turnos": 0, "fragil_atalho": null, "prestigio_min": 0, "fragil": 0.5, "evento_unico": false, "janela": 0}
+    ]},
+    {"id": "Casa Aviadora-A", "papel": "Casa Aviadora", "variante": "A", "marcos": [
+      {"id": "Casa Aviadora-A-1", "tipo": "caixa_e_contrato", "acoes": 2, "custo": 12, "coop": true, "parceiros": 1, "turno_min": 1, "bifurcacao": "B7", "desfecho_favoravel": ["resiste", "resgate", "cartel"], "modo_bifurcacao": "risco", "p_condicional": 1.0, "p_favoravel": 0.75, "atalho_acoes": 2, "atalho_turnos": 2, "fragil_atalho": 0.5, "prestigio_min": 0, "fragil": 0.4, "evento_unico": false, "janela": 0},
+      {"id": "Casa Aviadora-A-2", "tipo": "contrato", "acoes": 3, "custo": 0, "coop": true, "parceiros": 1, "turno_min": 1, "bifurcacao": null, "desfecho_favoravel": null, "modo_bifurcacao": null, "p_condicional": 1.0, "p_favoravel": 0.5, "atalho_acoes": 0, "atalho_turnos": 0, "fragil_atalho": null, "prestigio_min": 0, "fragil": 0.5, "evento_unico": false, "janela": 0},
+      {"id": "Casa Aviadora-A-3", "tipo": "contratos", "acoes": 2, "custo": 6, "coop": true, "parceiros": 2, "turno_min": 1, "bifurcacao": null, "desfecho_favoravel": null, "modo_bifurcacao": null, "p_condicional": 1.0, "p_favoravel": 0.5, "atalho_acoes": 0, "atalho_turnos": 0, "fragil_atalho": null, "prestigio_min": 0, "fragil": 0.7, "evento_unico": false, "janela": 0}
+    ]},
+    {"id": "Casa Aviadora-B", "papel": "Casa Aviadora", "variante": "B", "marcos": [
+      {"id": "Casa Aviadora-B-1", "tipo": "prestigio_e_contrato", "acoes": 2, "custo": 4, "coop": true, "parceiros": 1, "turno_min": 1, "bifurcacao": null, "desfecho_favoravel": null, "modo_bifurcacao": null, "p_condicional": 1.0, "p_favoravel": 0.5, "atalho_acoes": 0, "atalho_turnos": 0, "fragil_atalho": null, "prestigio_min": 6, "fragil": 0.5, "evento_unico": false, "janela": 0},
+      {"id": "Casa Aviadora-B-2", "tipo": "alvo_contrato_ou_denuncia", "acoes": 3, "custo": 3, "coop": true, "parceiros": 1, "turno_min": 3, "bifurcacao": null, "desfecho_favoravel": null, "modo_bifurcacao": null, "p_condicional": 1.0, "p_favoravel": 0.5, "atalho_acoes": 0, "atalho_turnos": 0, "fragil_atalho": null, "prestigio_min": 0, "fragil": 0.5, "evento_unico": false, "janela": 0},
+      {"id": "Casa Aviadora-B-3", "tipo": "contrato", "acoes": 1, "custo": 2, "coop": true, "parceiros": 1, "turno_min": 1, "bifurcacao": null, "desfecho_favoravel": null, "modo_bifurcacao": null, "p_condicional": 1.0, "p_favoravel": 0.5, "atalho_acoes": 0, "atalho_turnos": 0, "fragil_atalho": null, "prestigio_min": 0, "fragil": 0.5, "evento_unico": false, "janela": 0}
+    ]},
+    {"id": "Casa Aviadora-C", "papel": "Casa Aviadora", "variante": "C", "marcos": [
+      {"id": "Casa Aviadora-C-1", "tipo": "execucao_ou_dacao", "acoes": 3, "custo": 8, "coop": true, "parceiros": 1, "turno_min": 3, "bifurcacao": null, "desfecho_favoravel": null, "modo_bifurcacao": null, "p_condicional": 1.0, "p_favoravel": 0.5, "atalho_acoes": 0, "atalho_turnos": 0, "fragil_atalho": null, "prestigio_min": 0, "fragil": 0.4, "evento_unico": false, "janela": 0},
+      {"id": "Casa Aviadora-C-2", "tipo": "contratos", "acoes": 3, "custo": 10, "coop": true, "parceiros": 2, "turno_min": 1, "bifurcacao": null, "desfecho_favoravel": null, "modo_bifurcacao": null, "p_condicional": 1.0, "p_favoravel": 0.5, "atalho_acoes": 0, "atalho_turnos": 0, "fragil_atalho": null, "prestigio_min": 0, "fragil": 0.5, "evento_unico": false, "janela": 0},
+      {"id": "Casa Aviadora-C-3", "tipo": "contrato", "acoes": 1, "custo": 0, "coop": true, "parceiros": 1, "turno_min": 1, "bifurcacao": null, "desfecho_favoravel": null, "modo_bifurcacao": null, "p_condicional": 1.0, "p_favoravel": 0.5, "atalho_acoes": 0, "atalho_turnos": 0, "fragil_atalho": null, "prestigio_min": 0, "fragil": 0.6, "evento_unico": false, "janela": 0}
+    ]},
+    {"id": "Exportador-A", "papel": "Exportador", "variante": "A", "marcos": [
+      {"id": "Exportador-A-1", "tipo": "relogio", "acoes": 3, "custo": 4, "coop": false, "parceiros": 0, "turno_min": 6, "bifurcacao": "B3", "desfecho_favoravel": ["germina"], "modo_bifurcacao": "evento", "p_condicional": 1.0, "p_favoravel": 0.55, "atalho_acoes": 2, "atalho_turnos": 2, "fragil_atalho": 0.5, "prestigio_min": 0, "fragil": 0.05, "evento_unico": true, "janela": 0},
+      {"id": "Exportador-A-2", "tipo": "contrato", "acoes": 1, "custo": 2, "coop": true, "parceiros": 1, "turno_min": 1, "bifurcacao": null, "desfecho_favoravel": null, "modo_bifurcacao": null, "p_condicional": 1.0, "p_favoravel": 0.5, "atalho_acoes": 0, "atalho_turnos": 0, "fragil_atalho": null, "prestigio_min": 0, "fragil": 0.5, "evento_unico": false, "janela": 0},
+      {"id": "Exportador-A-3", "tipo": "estoque_e_contrato", "acoes": 2, "custo": 0, "coop": true, "parceiros": 1, "turno_min": 2, "bifurcacao": null, "desfecho_favoravel": null, "modo_bifurcacao": null, "p_condicional": 1.0, "p_favoravel": 0.5, "atalho_acoes": 0, "atalho_turnos": 0, "fragil_atalho": null, "prestigio_min": 0, "fragil": 0.4, "evento_unico": false, "janela": 0}
+    ]},
+    {"id": "Exportador-B", "papel": "Exportador", "variante": "B", "marcos": [
+      {"id": "Exportador-B-1", "tipo": "contrato", "acoes": 2, "custo": 6, "coop": true, "parceiros": 1, "turno_min": 1, "bifurcacao": null, "desfecho_favoravel": null, "modo_bifurcacao": null, "p_condicional": 1.0, "p_favoravel": 0.5, "atalho_acoes": 0, "atalho_turnos": 0, "fragil_atalho": null, "prestigio_min": 0, "fragil": 0.4, "evento_unico": false, "janela": 0},
+      {"id": "Exportador-B-2", "tipo": "contratos", "acoes": 2, "custo": 2, "coop": true, "parceiros": 2, "turno_min": 1, "bifurcacao": null, "desfecho_favoravel": null, "modo_bifurcacao": null, "p_condicional": 1.0, "p_favoravel": 0.5, "atalho_acoes": 0, "atalho_turnos": 0, "fragil_atalho": null, "prestigio_min": 0, "fragil": 0.5, "evento_unico": false, "janela": 0},
+      {"id": "Exportador-B-3", "tipo": "caixa", "acoes": 1, "custo": 15, "coop": false, "parceiros": 0, "turno_min": 8, "bifurcacao": null, "desfecho_favoravel": null, "modo_bifurcacao": null, "p_condicional": 1.0, "p_favoravel": 0.5, "atalho_acoes": 0, "atalho_turnos": 0, "fragil_atalho": null, "prestigio_min": 0, "fragil": 0.3, "evento_unico": false, "janela": 0}
+    ]},
+    {"id": "Exportador-C", "papel": "Exportador", "variante": "C", "marcos": [
+      {"id": "Exportador-C-1", "tipo": "relogio", "acoes": 3, "custo": 3, "coop": false, "parceiros": 0, "turno_min": 6, "bifurcacao": "B3", "desfecho_favoravel": ["presa"], "modo_bifurcacao": "evento", "p_condicional": 1.0, "p_favoravel": 0.45, "atalho_acoes": 3, "atalho_turnos": 2, "fragil_atalho": 0.6, "prestigio_min": 0, "fragil": 0.4, "evento_unico": false, "janela": 0},
+      {"id": "Exportador-C-2", "tipo": "contrato", "acoes": 1, "custo": 2, "coop": true, "parceiros": 1, "turno_min": 1, "bifurcacao": null, "desfecho_favoravel": null, "modo_bifurcacao": null, "p_condicional": 1.0, "p_favoravel": 0.5, "atalho_acoes": 0, "atalho_turnos": 0, "fragil_atalho": null, "prestigio_min": 0, "fragil": 0.5, "evento_unico": false, "janela": 0},
+      {"id": "Exportador-C-3", "tipo": "denuncia_janela", "acoes": 3, "custo": 3, "coop": false, "parceiros": 0, "turno_min": 3, "bifurcacao": null, "desfecho_favoravel": null, "modo_bifurcacao": null, "p_condicional": 1.0, "p_favoravel": 0.5, "atalho_acoes": 0, "atalho_turnos": 0, "fragil_atalho": null, "prestigio_min": 0, "fragil": 0.3, "evento_unico": false, "janela": 3}
+    ]},
+    {"id": "Armador-A", "papel": "Armador", "variante": "A", "marcos": [
+      {"id": "Armador-A-1", "tipo": "votacao", "acoes": 2, "custo": 3, "coop": false, "parceiros": 0, "turno_min": 6, "bifurcacao": "Vconc", "desfecho_favoravel": ["sim"], "modo_bifurcacao": "evento", "p_condicional": 1.0, "p_favoravel": 0.55, "atalho_acoes": 2, "atalho_turnos": 1, "fragil_atalho": 0.5, "prestigio_min": 0, "fragil": 0.3, "evento_unico": false, "janela": 0},
+      {"id": "Armador-A-2", "tipo": "contrato", "acoes": 2, "custo": 2, "coop": true, "parceiros": 1, "turno_min": 1, "bifurcacao": null, "desfecho_favoravel": null, "modo_bifurcacao": null, "p_condicional": 1.0, "p_favoravel": 0.5, "atalho_acoes": 0, "atalho_turnos": 0, "fragil_atalho": null, "prestigio_min": 0, "fragil": 0.5, "evento_unico": false, "janela": 0},
+      {"id": "Armador-A-3", "tipo": "contratos", "acoes": 2, "custo": 0, "coop": true, "parceiros": 2, "turno_min": 1, "bifurcacao": null, "desfecho_favoravel": null, "modo_bifurcacao": null, "p_condicional": 1.0, "p_favoravel": 0.5, "atalho_acoes": 0, "atalho_turnos": 0, "fragil_atalho": null, "prestigio_min": 0, "fragil": 0.6, "evento_unico": false, "janela": 0}
+    ]},
+    {"id": "Armador-B", "papel": "Armador", "variante": "B", "marcos": [
+      {"id": "Armador-B-1", "tipo": "leilao", "acoes": 2, "custo": 6, "coop": false, "parceiros": 0, "turno_min": 3, "bifurcacao": "Vleil", "desfecho_favoravel": ["sim"], "modo_bifurcacao": "evento", "p_condicional": 1.0, "p_favoravel": 0.5, "atalho_acoes": 2, "atalho_turnos": 1, "fragil_atalho": 0.5, "prestigio_min": 0, "fragil": 0.3, "evento_unico": false, "janela": 0},
+      {"id": "Armador-B-2", "tipo": "contrato", "acoes": 1, "custo": 0, "coop": true, "parceiros": 1, "turno_min": 1, "bifurcacao": null, "desfecho_favoravel": null, "modo_bifurcacao": null, "p_condicional": 1.0, "p_favoravel": 0.5, "atalho_acoes": 0, "atalho_turnos": 0, "fragil_atalho": null, "prestigio_min": 0, "fragil": 0.5, "evento_unico": false, "janela": 0},
+      {"id": "Armador-B-3", "tipo": "contrato", "acoes": 2, "custo": 4, "coop": true, "parceiros": 1, "turno_min": 8, "bifurcacao": null, "desfecho_favoravel": null, "modo_bifurcacao": null, "p_condicional": 1.0, "p_favoravel": 0.5, "atalho_acoes": 0, "atalho_turnos": 0, "fragil_atalho": null, "prestigio_min": 0, "fragil": 0.5, "evento_unico": false, "janela": 0}
+    ]},
+    {"id": "Armador-C", "papel": "Armador", "variante": "C", "marcos": [
+      {"id": "Armador-C-1", "tipo": "bifurcacao", "acoes": 2, "custo": 4, "coop": false, "parceiros": 0, "turno_min": 8, "bifurcacao": "B4", "desfecho_favoravel": ["esmagada", "revolta"], "modo_bifurcacao": "evento", "p_condicional": 1.0, "p_favoravel": 0.6, "atalho_acoes": 1, "atalho_turnos": 2, "fragil_atalho": 0.5, "prestigio_min": 0, "fragil": 0.0, "evento_unico": true, "janela": 0},
+      {"id": "Armador-C-2", "tipo": "contrato", "acoes": 1, "custo": 0, "coop": true, "parceiros": 1, "turno_min": 2, "bifurcacao": null, "desfecho_favoravel": null, "modo_bifurcacao": null, "p_condicional": 1.0, "p_favoravel": 0.5, "atalho_acoes": 0, "atalho_turnos": 0, "fragil_atalho": null, "prestigio_min": 0, "fragil": 0.5, "evento_unico": false, "janela": 0},
+      {"id": "Armador-C-3", "tipo": "alvo_contrato_ou_denuncia", "acoes": 3, "custo": 3, "coop": true, "parceiros": 1, "turno_min": 3, "bifurcacao": null, "desfecho_favoravel": null, "modo_bifurcacao": null, "p_condicional": 1.0, "p_favoravel": 0.5, "atalho_acoes": 0, "atalho_turnos": 0, "fragil_atalho": null, "prestigio_min": 0, "fragil": 0.5, "evento_unico": false, "janela": 0}
+    ]},
+    {"id": "Governador-A", "papel": "Governador", "variante": "A", "marcos": [
+      {"id": "Governador-A-1", "tipo": "bifurcacao", "acoes": 3, "custo": 4, "coop": false, "parceiros": 0, "turno_min": 6, "bifurcacao": "B5", "desfecho_favoravel": ["continuidade"], "modo_bifurcacao": "evento", "p_condicional": 1.0, "p_favoravel": 0.45, "atalho_acoes": 2, "atalho_turnos": 2, "fragil_atalho": 0.5, "prestigio_min": 0, "fragil": 0.2, "evento_unico": true, "janela": 0},
+      {"id": "Governador-A-2", "tipo": "alvo_contrato_ou_denuncia", "acoes": 3, "custo": 3, "coop": true, "parceiros": 1, "turno_min": 3, "bifurcacao": null, "desfecho_favoravel": null, "modo_bifurcacao": null, "p_condicional": 1.0, "p_favoravel": 0.5, "atalho_acoes": 0, "atalho_turnos": 0, "fragil_atalho": null, "prestigio_min": 0, "fragil": 0.5, "evento_unico": false, "janela": 0},
+      {"id": "Governador-A-3", "tipo": "contratos", "acoes": 2, "custo": 2, "coop": true, "parceiros": 2, "turno_min": 1, "bifurcacao": null, "desfecho_favoravel": null, "modo_bifurcacao": null, "p_condicional": 1.0, "p_favoravel": 0.5, "atalho_acoes": 0, "atalho_turnos": 0, "fragil_atalho": null, "prestigio_min": 0, "fragil": 0.6, "evento_unico": false, "janela": 0}
+    ]},
+    {"id": "Governador-B", "papel": "Governador", "variante": "B", "marcos": [
+      {"id": "Governador-B-1", "tipo": "bifurcacao", "acoes": 2, "custo": 2, "coop": false, "parceiros": 0, "turno_min": 7, "bifurcacao": "B1", "desfecho_favoravel": ["tratado", "independencia", "arrendamento"], "modo_bifurcacao": "evento", "p_condicional": 1.0, "p_favoravel": 0.75, "atalho_acoes": 3, "atalho_turnos": 2, "fragil_atalho": 0.5, "prestigio_min": 0, "fragil": 0.0, "evento_unico": true, "janela": 0},
+      {"id": "Governador-B-2", "tipo": "alvo_contrato_ou_denuncia", "acoes": 3, "custo": 3, "coop": true, "parceiros": 1, "turno_min": 3, "bifurcacao": null, "desfecho_favoravel": null, "modo_bifurcacao": null, "p_condicional": 1.0, "p_favoravel": 0.5, "atalho_acoes": 0, "atalho_turnos": 0, "fragil_atalho": null, "prestigio_min": 0, "fragil": 0.5, "evento_unico": false, "janela": 0},
+      {"id": "Governador-B-3", "tipo": "contratos", "acoes": 2, "custo": 2, "coop": true, "parceiros": 2, "turno_min": 3, "bifurcacao": null, "desfecho_favoravel": null, "modo_bifurcacao": null, "p_condicional": 1.0, "p_favoravel": 0.5, "atalho_acoes": 0, "atalho_turnos": 0, "fragil_atalho": null, "prestigio_min": 0, "fragil": 0.6, "evento_unico": false, "janela": 0}
+    ]},
+    {"id": "Governador-C", "papel": "Governador", "variante": "C", "marcos": [
+      {"id": "Governador-C-1", "tipo": "bifurcacao_e_contrato", "acoes": 2, "custo": 2, "coop": true, "parceiros": 1, "turno_min": 6, "bifurcacao": "B5", "desfecho_favoravel": ["continuidade", "oposicao"], "modo_bifurcacao": "evento", "p_condicional": 1.0, "p_favoravel": 0.8, "atalho_acoes": 3, "atalho_turnos": 2, "fragil_atalho": 0.5, "prestigio_min": 0, "fragil": 0.5, "evento_unico": false, "janela": 0},
+      {"id": "Governador-C-2", "tipo": "contrato", "acoes": 3, "custo": 2, "coop": true, "parceiros": 1, "turno_min": 1, "bifurcacao": null, "desfecho_favoravel": null, "modo_bifurcacao": null, "p_condicional": 1.0, "p_favoravel": 0.5, "atalho_acoes": 0, "atalho_turnos": 0, "fragil_atalho": null, "prestigio_min": 0, "fragil": 0.5, "evento_unico": false, "janela": 0},
+      {"id": "Governador-C-3", "tipo": "contrato", "acoes": 1, "custo": 2, "coop": true, "parceiros": 1, "turno_min": 1, "bifurcacao": null, "desfecho_favoravel": null, "modo_bifurcacao": null, "p_condicional": 1.0, "p_favoravel": 0.5, "atalho_acoes": 0, "atalho_turnos": 0, "fragil_atalho": null, "prestigio_min": 0, "fragil": 0.5, "evento_unico": false, "janela": 0}
+    ]},
+    {"id": "Dono do jornal-A", "papel": "Dono do jornal", "variante": "A", "marcos": [
+      {"id": "Dono do jornal-A-1", "tipo": "bifurcacao", "acoes": 2, "custo": 2, "coop": false, "parceiros": 0, "turno_min": 6, "bifurcacao": "B5", "desfecho_favoravel": ["oposicao", "intervencao"], "modo_bifurcacao": "evento", "p_condicional": 1.0, "p_favoravel": 0.55, "atalho_acoes": 3, "atalho_turnos": 2, "fragil_atalho": 0.5, "prestigio_min": 0, "fragil": 0.0, "evento_unico": true, "janela": 0},
+      {"id": "Dono do jornal-A-2", "tipo": "contratos", "acoes": 2, "custo": 0, "coop": true, "parceiros": 2, "turno_min": 1, "bifurcacao": null, "desfecho_favoravel": null, "modo_bifurcacao": null, "p_condicional": 1.0, "p_favoravel": 0.5, "atalho_acoes": 0, "atalho_turnos": 0, "fragil_atalho": null, "prestigio_min": 0, "fragil": 0.6, "evento_unico": false, "janela": 0},
+      {"id": "Dono do jornal-A-3", "tipo": "denuncia_janela", "acoes": 3, "custo": 3, "coop": false, "parceiros": 0, "turno_min": 3, "bifurcacao": null, "desfecho_favoravel": null, "modo_bifurcacao": null, "p_condicional": 1.0, "p_favoravel": 0.5, "atalho_acoes": 0, "atalho_turnos": 0, "fragil_atalho": null, "prestigio_min": 0, "fragil": 0.3, "evento_unico": false, "janela": 3}
+    ]},
+    {"id": "Dono do jornal-B", "papel": "Dono do jornal", "variante": "B", "marcos": [
+      {"id": "Dono do jornal-B-1", "tipo": "denuncia_permanente", "acoes": 2, "custo": 3, "coop": false, "parceiros": 0, "turno_min": 3, "bifurcacao": null, "desfecho_favoravel": null, "modo_bifurcacao": null, "p_condicional": 1.0, "p_favoravel": 0.5, "atalho_acoes": 0, "atalho_turnos": 0, "fragil_atalho": null, "prestigio_min": 0, "fragil": 0.3, "evento_unico": false, "janela": 0},
+      {"id": "Dono do jornal-B-2", "tipo": "contrato", "acoes": 1, "custo": 1, "coop": true, "parceiros": 1, "turno_min": 1, "bifurcacao": null, "desfecho_favoravel": null, "modo_bifurcacao": null, "p_condicional": 1.0, "p_favoravel": 0.5, "atalho_acoes": 0, "atalho_turnos": 0, "fragil_atalho": null, "prestigio_min": 0, "fragil": 0.5, "evento_unico": false, "janela": 0},
+      {"id": "Dono do jornal-B-3", "tipo": "bifurcacao", "acoes": 2, "custo": 2, "coop": false, "parceiros": 0, "turno_min": 8, "bifurcacao": "B4", "desfecho_favoravel": ["acordo"], "modo_bifurcacao": "evento", "p_condicional": 1.0, "p_favoravel": 0.4, "atalho_acoes": 1, "atalho_turnos": 1, "fragil_atalho": 0.5, "prestigio_min": 0, "fragil": 0.0, "evento_unico": true, "janela": 0}
+    ]},
+    {"id": "Dono do jornal-C", "papel": "Dono do jornal", "variante": "C", "marcos": [
+      {"id": "Dono do jornal-C-1", "tipo": "provas", "acoes": 5, "custo": 6, "coop": false, "parceiros": 0, "turno_min": 3, "bifurcacao": null, "desfecho_favoravel": null, "modo_bifurcacao": null, "p_condicional": 1.0, "p_favoravel": 0.5, "atalho_acoes": 0, "atalho_turnos": 0, "fragil_atalho": null, "prestigio_min": 0, "fragil": 0.4, "evento_unico": false, "janela": 0},
+      {"id": "Dono do jornal-C-2", "tipo": "bifurcacao", "acoes": 2, "custo": 2, "coop": false, "parceiros": 0, "turno_min": 6, "bifurcacao": "B5", "desfecho_favoravel": ["oposicao", "intervencao"], "modo_bifurcacao": "evento", "p_condicional": 1.0, "p_favoravel": 0.55, "atalho_acoes": 3, "atalho_turnos": 1, "fragil_atalho": 0.3, "prestigio_min": 0, "fragil": 0.1, "evento_unico": true, "janela": 0},
+      {"id": "Dono do jornal-C-3", "tipo": "indicador", "acoes": 3, "custo": 2, "coop": false, "parceiros": 0, "turno_min": 4, "bifurcacao": null, "desfecho_favoravel": null, "modo_bifurcacao": null, "p_condicional": 1.0, "p_favoravel": 0.5, "atalho_acoes": 0, "atalho_turnos": 0, "fragil_atalho": null, "prestigio_min": 0, "fragil": 0.4, "evento_unico": false, "janela": 0}
+    ]},
+    {"id": "Caudilho-A", "papel": "Caudilho", "variante": "A", "marcos": [
+      {"id": "Caudilho-A-1", "tipo": "bifurcacao", "acoes": 3, "custo": 3, "coop": false, "parceiros": 0, "turno_min": 7, "bifurcacao": "B1", "desfecho_favoravel": ["independencia"], "modo_bifurcacao": "evento", "p_condicional": 1.0, "p_favoravel": 0.2, "atalho_acoes": 1, "atalho_turnos": 2, "fragil_atalho": 0.5, "prestigio_min": 0, "fragil": 0.2, "evento_unico": true, "janela": 0},
+      {"id": "Caudilho-A-2", "tipo": "contrato", "acoes": 1, "custo": 0, "coop": true, "parceiros": 1, "turno_min": 1, "bifurcacao": null, "desfecho_favoravel": null, "modo_bifurcacao": null, "p_condicional": 1.0, "p_favoravel": 0.5, "atalho_acoes": 0, "atalho_turnos": 0, "fragil_atalho": null, "prestigio_min": 0, "fragil": 0.5, "evento_unico": false, "janela": 0},
+      {"id": "Caudilho-A-3", "tipo": "alvo_contrato_ou_denuncia", "acoes": 3, "custo": 2, "coop": true, "parceiros": 1, "turno_min": 5, "bifurcacao": null, "desfecho_favoravel": null, "modo_bifurcacao": null, "p_condicional": 1.0, "p_favoravel": 0.5, "atalho_acoes": 0, "atalho_turnos": 0, "fragil_atalho": null, "prestigio_min": 0, "fragil": 0.5, "evento_unico": false, "janela": 0}
+    ]},
+    {"id": "Caudilho-B", "papel": "Caudilho", "variante": "B", "marcos": [
+      {"id": "Caudilho-B-1", "tipo": "bifurcacao", "acoes": 2, "custo": 2, "coop": false, "parceiros": 0, "turno_min": 7, "bifurcacao": "B1", "desfecho_favoravel": ["tratado", "armas"], "modo_bifurcacao": "evento", "p_condicional": 1.0, "p_favoravel": 0.6, "atalho_acoes": 3, "atalho_turnos": 2, "fragil_atalho": 0.5, "prestigio_min": 0, "fragil": 0.0, "evento_unico": true, "janela": 0},
+      {"id": "Caudilho-B-2", "tipo": "contrato", "acoes": 3, "custo": 2, "coop": true, "parceiros": 1, "turno_min": 1, "bifurcacao": null, "desfecho_favoravel": null, "modo_bifurcacao": null, "p_condicional": 1.0, "p_favoravel": 0.5, "atalho_acoes": 0, "atalho_turnos": 0, "fragil_atalho": null, "prestigio_min": 0, "fragil": 0.5, "evento_unico": false, "janela": 0},
+      {"id": "Caudilho-B-3", "tipo": "tropa_e_contrato", "acoes": 2, "custo": 5, "coop": true, "parceiros": 1, "turno_min": 2, "bifurcacao": null, "desfecho_favoravel": null, "modo_bifurcacao": null, "p_condicional": 1.0, "p_favoravel": 0.5, "atalho_acoes": 0, "atalho_turnos": 0, "fragil_atalho": null, "prestigio_min": 0, "fragil": 0.6, "evento_unico": false, "janela": 0}
+    ]},
+    {"id": "Caudilho-C", "papel": "Caudilho", "variante": "C", "marcos": [
+      {"id": "Caudilho-C-1", "tipo": "votacao", "acoes": 2, "custo": 3, "coop": false, "parceiros": 0, "turno_min": 7, "bifurcacao": "Vanist", "desfecho_favoravel": ["sim"], "modo_bifurcacao": "evento", "p_condicional": 1.0, "p_favoravel": 0.5, "atalho_acoes": 2, "atalho_turnos": 2, "fragil_atalho": 0.5, "prestigio_min": 0, "fragil": 0.0, "evento_unico": true, "janela": 0},
+      {"id": "Caudilho-C-2", "tipo": "alvo_contrato_ou_denuncia", "acoes": 3, "custo": 3, "coop": true, "parceiros": 1, "turno_min": 3, "bifurcacao": null, "desfecho_favoravel": null, "modo_bifurcacao": null, "p_condicional": 1.0, "p_favoravel": 0.5, "atalho_acoes": 0, "atalho_turnos": 0, "fragil_atalho": null, "prestigio_min": 0, "fragil": 0.5, "evento_unico": false, "janela": 0},
+      {"id": "Caudilho-C-3", "tipo": "prestigio_e_contrato", "acoes": 1, "custo": -4, "coop": true, "parceiros": 1, "turno_min": 1, "bifurcacao": null, "desfecho_favoravel": null, "modo_bifurcacao": null, "p_condicional": 1.0, "p_favoravel": 0.5, "atalho_acoes": 0, "atalho_turnos": 0, "fragil_atalho": null, "prestigio_min": 4, "fragil": 0.6, "evento_unico": false, "janela": 0}
+    ]},
+    {"id": "Naturalista-A", "papel": "Naturalista", "variante": "A", "marcos": [
+      {"id": "Naturalista-A-1", "tipo": "relogio", "acoes": 3, "custo": 2, "coop": false, "parceiros": 0, "turno_min": 6, "bifurcacao": "B3", "desfecho_favoravel": ["germina"], "modo_bifurcacao": "evento", "p_condicional": 1.0, "p_favoravel": 0.55, "atalho_acoes": 2, "atalho_turnos": 2, "fragil_atalho": 0.5, "prestigio_min": 0, "fragil": 0.05, "evento_unico": true, "janela": 0},
+      {"id": "Naturalista-A-2", "tipo": "contrato", "acoes": 1, "custo": 3, "coop": true, "parceiros": 1, "turno_min": 1, "bifurcacao": null, "desfecho_favoravel": null, "modo_bifurcacao": null, "p_condicional": 1.0, "p_favoravel": 0.5, "atalho_acoes": 0, "atalho_turnos": 0, "fragil_atalho": null, "prestigio_min": 0, "fragil": 0.5, "evento_unico": false, "janela": 0},
+      {"id": "Naturalista-A-3", "tipo": "contrato", "acoes": 1, "custo": 0, "coop": true, "parceiros": 1, "turno_min": 1, "bifurcacao": null, "desfecho_favoravel": null, "modo_bifurcacao": null, "p_condicional": 1.0, "p_favoravel": 0.5, "atalho_acoes": 0, "atalho_turnos": 0, "fragil_atalho": null, "prestigio_min": 0, "fragil": 0.6, "evento_unico": false, "janela": 0}
+    ]},
+    {"id": "Naturalista-B", "papel": "Naturalista", "variante": "B", "marcos": [
+      {"id": "Naturalista-B-1", "tipo": "relogio", "acoes": 3, "custo": 2, "coop": false, "parceiros": 0, "turno_min": 6, "bifurcacao": "B3", "desfecho_favoravel": ["presa"], "modo_bifurcacao": "evento", "p_condicional": 1.0, "p_favoravel": 0.45, "atalho_acoes": 3, "atalho_turnos": 2, "fragil_atalho": 0.6, "prestigio_min": 0, "fragil": 0.4, "evento_unico": false, "janela": 0},
+      {"id": "Naturalista-B-2", "tipo": "denuncia_janela", "acoes": 3, "custo": 3, "coop": false, "parceiros": 0, "turno_min": 3, "bifurcacao": null, "desfecho_favoravel": null, "modo_bifurcacao": null, "p_condicional": 1.0, "p_favoravel": 0.5, "atalho_acoes": 0, "atalho_turnos": 0, "fragil_atalho": null, "prestigio_min": 0, "fragil": 0.3, "evento_unico": false, "janela": 3},
+      {"id": "Naturalista-B-3", "tipo": "contrato", "acoes": 2, "custo": 2, "coop": true, "parceiros": 1, "turno_min": 1, "bifurcacao": null, "desfecho_favoravel": null, "modo_bifurcacao": null, "p_condicional": 1.0, "p_favoravel": 0.5, "atalho_acoes": 0, "atalho_turnos": 0, "fragil_atalho": null, "prestigio_min": 0, "fragil": 0.6, "evento_unico": false, "janela": 0}
+    ]},
+    {"id": "Naturalista-C", "papel": "Naturalista", "variante": "C", "marcos": [
+      {"id": "Naturalista-C-1", "tipo": "alvo_contrato_ou_denuncia", "acoes": 3, "custo": 2, "coop": true, "parceiros": 1, "turno_min": 3, "bifurcacao": null, "desfecho_favoravel": null, "modo_bifurcacao": null, "p_condicional": 1.0, "p_favoravel": 0.5, "atalho_acoes": 0, "atalho_turnos": 0, "fragil_atalho": null, "prestigio_min": 0, "fragil": 0.4, "evento_unico": false, "janela": 0},
+      {"id": "Naturalista-C-2", "tipo": "indicador_e_contrato", "acoes": 3, "custo": 4, "coop": true, "parceiros": 1, "turno_min": 3, "bifurcacao": null, "desfecho_favoravel": null, "modo_bifurcacao": null, "p_condicional": 1.0, "p_favoravel": 0.5, "atalho_acoes": 0, "atalho_turnos": 0, "fragil_atalho": null, "prestigio_min": 0, "fragil": 0.5, "evento_unico": false, "janela": 0},
+      {"id": "Naturalista-C-3", "tipo": "prestigio_e_contrato", "acoes": 1, "custo": 0, "coop": true, "parceiros": 1, "turno_min": 1, "bifurcacao": null, "desfecho_favoravel": null, "modo_bifurcacao": null, "p_condicional": 1.0, "p_favoravel": 0.5, "atalho_acoes": 0, "atalho_turnos": 0, "fragil_atalho": null, "prestigio_min": 4, "fragil": 0.5, "evento_unico": false, "janela": 0}
+    ]},
+    {"id": "Engenheiro-A", "papel": "Engenheiro", "variante": "A", "marcos": [
+      {"id": "Engenheiro-A-1", "tipo": "estado_e_contratos", "acoes": 3, "custo": 4, "coop": true, "parceiros": 2, "turno_min": 7, "bifurcacao": null, "desfecho_favoravel": null, "modo_bifurcacao": null, "p_condicional": 1.0, "p_favoravel": 0.5, "atalho_acoes": 0, "atalho_turnos": 0, "fragil_atalho": null, "prestigio_min": 0, "fragil": 0.5, "evento_unico": false, "janela": 0},
+      {"id": "Engenheiro-A-2", "tipo": "bifurcacao", "acoes": 1, "custo": 3, "coop": false, "parceiros": 0, "turno_min": 7, "bifurcacao": "B1", "desfecho_favoravel": ["tratado", "arrendamento"], "modo_bifurcacao": "evento", "p_condicional": 0.7, "p_favoravel": 0.385, "atalho_acoes": 3, "atalho_turnos": 2, "fragil_atalho": 0.5, "prestigio_min": 0, "fragil": 0.0, "evento_unico": true, "janela": 0},
+      {"id": "Engenheiro-A-3", "tipo": "alvo_contrato_ou_denuncia", "acoes": 2, "custo": 2, "coop": true, "parceiros": 1, "turno_min": 1, "bifurcacao": null, "desfecho_favoravel": null, "modo_bifurcacao": null, "p_condicional": 1.0, "p_favoravel": 0.5, "atalho_acoes": 0, "atalho_turnos": 0, "fragil_atalho": null, "prestigio_min": 0, "fragil": 0.5, "evento_unico": false, "janela": 0}
+    ]},
+    {"id": "Engenheiro-B", "papel": "Engenheiro", "variante": "B", "marcos": [
+      {"id": "Engenheiro-B-1", "tipo": "contrato", "acoes": 2, "custo": 0, "coop": true, "parceiros": 1, "turno_min": 1, "bifurcacao": null, "desfecho_favoravel": null, "modo_bifurcacao": null, "p_condicional": 1.0, "p_favoravel": 0.5, "atalho_acoes": 0, "atalho_turnos": 0, "fragil_atalho": null, "prestigio_min": 0, "fragil": 0.5, "evento_unico": false, "janela": 0},
+      {"id": "Engenheiro-B-2", "tipo": "contrato_e_noticia", "acoes": 2, "custo": 3, "coop": true, "parceiros": 1, "turno_min": 1, "bifurcacao": null, "desfecho_favoravel": null, "modo_bifurcacao": null, "p_condicional": 1.0, "p_favoravel": 0.5, "atalho_acoes": 0, "atalho_turnos": 0, "fragil_atalho": null, "prestigio_min": 0, "fragil": 0.7, "evento_unico": false, "janela": 2},
+      {"id": "Engenheiro-B-3", "tipo": "caixa_e_participacao", "acoes": 1, "custo": 6, "coop": false, "parceiros": 0, "turno_min": 8, "bifurcacao": null, "desfecho_favoravel": null, "modo_bifurcacao": null, "p_condicional": 1.0, "p_favoravel": 0.5, "atalho_acoes": 0, "atalho_turnos": 0, "fragil_atalho": null, "prestigio_min": 0, "fragil": 0.4, "evento_unico": false, "janela": 0}
+    ]},
+    {"id": "Engenheiro-C", "papel": "Engenheiro", "variante": "C", "marcos": [
+      {"id": "Engenheiro-C-1", "tipo": "estado_e_contrato", "acoes": 2, "custo": 3, "coop": true, "parceiros": 1, "turno_min": 7, "bifurcacao": null, "desfecho_favoravel": null, "modo_bifurcacao": null, "p_condicional": 1.0, "p_favoravel": 0.5, "atalho_acoes": 0, "atalho_turnos": 0, "fragil_atalho": null, "prestigio_min": 0, "fragil": 0.5, "evento_unico": false, "janela": 0},
+      {"id": "Engenheiro-C-2", "tipo": "bifurcacao", "acoes": 2, "custo": 2, "coop": false, "parceiros": 0, "turno_min": 7, "bifurcacao": "B1", "desfecho_favoravel": ["tratado", "independencia", "arrendamento"], "modo_bifurcacao": "evento", "p_condicional": 1.0, "p_favoravel": 0.75, "atalho_acoes": 3, "atalho_turnos": 2, "fragil_atalho": 0.5, "prestigio_min": 0, "fragil": 0.0, "evento_unico": true, "janela": 0},
+      {"id": "Engenheiro-C-3", "tipo": "alvo_contrato_ou_denuncia", "acoes": 3, "custo": 3, "coop": true, "parceiros": 1, "turno_min": 3, "bifurcacao": null, "desfecho_favoravel": null, "modo_bifurcacao": null, "p_condicional": 1.0, "p_favoravel": 0.5, "atalho_acoes": 0, "atalho_turnos": 0, "fragil_atalho": null, "prestigio_min": 0, "fragil": 0.5, "evento_unico": false, "janela": 0}
+    ]},
+    {"id": "Lider seringueiro-A", "papel": "Lider seringueiro", "variante": "A", "marcos": [
+      {"id": "Lider seringueiro-A-1", "tipo": "bifurcacao", "acoes": 3, "custo": 2, "coop": false, "parceiros": 0, "turno_min": 8, "bifurcacao": "B4", "desfecho_favoravel": ["acordo"], "modo_bifurcacao": "evento", "p_condicional": 1.0, "p_favoravel": 0.4, "atalho_acoes": 1, "atalho_turnos": 1, "fragil_atalho": 0.5, "prestigio_min": 0, "fragil": 0.0, "evento_unico": true, "janela": 0},
+      {"id": "Lider seringueiro-A-2", "tipo": "indicador_e_contrato", "acoes": 2, "custo": 2, "coop": true, "parceiros": 1, "turno_min": 3, "bifurcacao": null, "desfecho_favoravel": null, "modo_bifurcacao": null, "p_condicional": 1.0, "p_favoravel": 0.5, "atalho_acoes": 0, "atalho_turnos": 0, "fragil_atalho": null, "prestigio_min": 0, "fragil": 0.5, "evento_unico": false, "janela": 0},
+      {"id": "Lider seringueiro-A-3", "tipo": "alvo_contrato_ou_denuncia", "acoes": 2, "custo": 2, "coop": true, "parceiros": 1, "turno_min": 3, "bifurcacao": null, "desfecho_favoravel": null, "modo_bifurcacao": null, "p_condicional": 1.0, "p_favoravel": 0.5, "atalho_acoes": 0, "atalho_turnos": 0, "fragil_atalho": null, "prestigio_min": 0, "fragil": 0.5, "evento_unico": false, "janela": 0}
+    ]},
+    {"id": "Lider seringueiro-B", "papel": "Lider seringueiro", "variante": "B", "marcos": [
+      {"id": "Lider seringueiro-B-1", "tipo": "acao_repetida", "acoes": 2, "custo": 0, "coop": false, "parceiros": 0, "turno_min": 8, "bifurcacao": null, "desfecho_favoravel": null, "modo_bifurcacao": null, "p_condicional": 1.0, "p_favoravel": 0.5, "atalho_acoes": 0, "atalho_turnos": 0, "fragil_atalho": null, "prestigio_min": 0, "fragil": 0.5, "evento_unico": false, "janela": 3},
+      {"id": "Lider seringueiro-B-2", "tipo": "contrato", "acoes": 1, "custo": 0, "coop": true, "parceiros": 1, "turno_min": 1, "bifurcacao": null, "desfecho_favoravel": null, "modo_bifurcacao": null, "p_condicional": 1.0, "p_favoravel": 0.5, "atalho_acoes": 0, "atalho_turnos": 0, "fragil_atalho": null, "prestigio_min": 0, "fragil": 0.5, "evento_unico": false, "janela": 0},
+      {"id": "Lider seringueiro-B-3", "tipo": "contrato", "acoes": 1, "custo": 0, "coop": true, "parceiros": 1, "turno_min": 1, "bifurcacao": null, "desfecho_favoravel": null, "modo_bifurcacao": null, "p_condicional": 1.0, "p_favoravel": 0.5, "atalho_acoes": 0, "atalho_turnos": 0, "fragil_atalho": null, "prestigio_min": 0, "fragil": 0.6, "evento_unico": false, "janela": 0}
+    ]},
+    {"id": "Lider seringueiro-C", "papel": "Lider seringueiro", "variante": "C", "marcos": [
+      {"id": "Lider seringueiro-C-1", "tipo": "acao_secreta", "acoes": 4, "custo": 0, "coop": false, "parceiros": 0, "turno_min": 2, "bifurcacao": null, "desfecho_favoravel": null, "modo_bifurcacao": null, "p_condicional": 1.0, "p_favoravel": 0.5, "atalho_acoes": 0, "atalho_turnos": 0, "fragil_atalho": null, "prestigio_min": 0, "fragil": 0.3, "evento_unico": false, "janela": 3},
+      {"id": "Lider seringueiro-C-2", "tipo": "contrato", "acoes": 1, "custo": 0, "coop": true, "parceiros": 1, "turno_min": 1, "bifurcacao": null, "desfecho_favoravel": null, "modo_bifurcacao": null, "p_condicional": 1.0, "p_favoravel": 0.5, "atalho_acoes": 0, "atalho_turnos": 0, "fragil_atalho": null, "prestigio_min": 0, "fragil": 0.6, "evento_unico": false, "janela": 0},
+      {"id": "Lider seringueiro-C-3", "tipo": "indicador_e_contrato", "acoes": 3, "custo": 2, "coop": true, "parceiros": 1, "turno_min": 3, "bifurcacao": null, "desfecho_favoravel": null, "modo_bifurcacao": null, "p_condicional": 1.0, "p_favoravel": 0.5, "atalho_acoes": 0, "atalho_turnos": 0, "fragil_atalho": null, "prestigio_min": 0, "fragil": 0.5, "evento_unico": false, "janela": 0}
+    ]},
+    {"id": "Bispo-A", "papel": "Bispo", "variante": "A", "marcos": [
+      {"id": "Bispo-A-1", "tipo": "contratos", "acoes": 3, "custo": 0, "coop": true, "parceiros": 2, "turno_min": 1, "bifurcacao": null, "desfecho_favoravel": null, "modo_bifurcacao": null, "p_condicional": 1.0, "p_favoravel": 0.5, "atalho_acoes": 0, "atalho_turnos": 0, "fragil_atalho": null, "prestigio_min": 0, "fragil": 0.2, "evento_unico": false, "janela": 0},
+      {"id": "Bispo-A-2", "tipo": "alvo_contrato_ou_denuncia", "acoes": 3, "custo": 3, "coop": true, "parceiros": 1, "turno_min": 3, "bifurcacao": null, "desfecho_favoravel": null, "modo_bifurcacao": null, "p_condicional": 1.0, "p_favoravel": 0.5, "atalho_acoes": 0, "atalho_turnos": 0, "fragil_atalho": null, "prestigio_min": 0, "fragil": 0.5, "evento_unico": false, "janela": 0},
+      {"id": "Bispo-A-3", "tipo": "contrato", "acoes": 1, "custo": 3, "coop": true, "parceiros": 1, "turno_min": 1, "bifurcacao": null, "desfecho_favoravel": null, "modo_bifurcacao": null, "p_condicional": 1.0, "p_favoravel": 0.5, "atalho_acoes": 0, "atalho_turnos": 0, "fragil_atalho": null, "prestigio_min": 0, "fragil": 0.6, "evento_unico": false, "janela": 0}
+    ]},
+    {"id": "Bispo-B", "papel": "Bispo", "variante": "B", "marcos": [
+      {"id": "Bispo-B-1", "tipo": "bifurcacao", "acoes": 2, "custo": 1, "coop": false, "parceiros": 0, "turno_min": 8, "bifurcacao": "B4", "desfecho_favoravel": ["esmagada", "revolta"], "modo_bifurcacao": "evento", "p_condicional": 1.0, "p_favoravel": 0.6, "atalho_acoes": 1, "atalho_turnos": 1, "fragil_atalho": 0.5, "prestigio_min": 0, "fragil": 0.0, "evento_unico": true, "janela": 0},
+      {"id": "Bispo-B-2", "tipo": "contrato", "acoes": 1, "custo": 0, "coop": true, "parceiros": 1, "turno_min": 1, "bifurcacao": null, "desfecho_favoravel": null, "modo_bifurcacao": null, "p_condicional": 1.0, "p_favoravel": 0.5, "atalho_acoes": 0, "atalho_turnos": 0, "fragil_atalho": null, "prestigio_min": 0, "fragil": 0.5, "evento_unico": false, "janela": 0},
+      {"id": "Bispo-B-3", "tipo": "alvo_contrato_ou_denuncia", "acoes": 3, "custo": 3, "coop": true, "parceiros": 1, "turno_min": 3, "bifurcacao": null, "desfecho_favoravel": null, "modo_bifurcacao": null, "p_condicional": 1.0, "p_favoravel": 0.5, "atalho_acoes": 0, "atalho_turnos": 0, "fragil_atalho": null, "prestigio_min": 0, "fragil": 0.5, "evento_unico": false, "janela": 0}
+    ]},
+    {"id": "Bispo-C", "papel": "Bispo", "variante": "C", "marcos": [
+      {"id": "Bispo-C-1", "tipo": "bifurcacao", "acoes": 3, "custo": 2, "coop": false, "parceiros": 0, "turno_min": 7, "bifurcacao": "B1", "desfecho_favoravel": ["tratado"], "modo_bifurcacao": "evento", "p_condicional": 1.0, "p_favoravel": 0.35, "atalho_acoes": 2, "atalho_turnos": 2, "fragil_atalho": 0.5, "prestigio_min": 0, "fragil": 0.0, "evento_unico": true, "janela": 0},
+      {"id": "Bispo-C-2", "tipo": "alvo_contrato_ou_denuncia", "acoes": 2, "custo": 2, "coop": true, "parceiros": 1, "turno_min": 5, "bifurcacao": null, "desfecho_favoravel": null, "modo_bifurcacao": null, "p_condicional": 1.0, "p_favoravel": 0.5, "atalho_acoes": 0, "atalho_turnos": 0, "fragil_atalho": null, "prestigio_min": 0, "fragil": 0.5, "evento_unico": false, "janela": 0},
+      {"id": "Bispo-C-3", "tipo": "prestigio_e_contratos", "acoes": 2, "custo": 2, "coop": true, "parceiros": 2, "turno_min": 1, "bifurcacao": null, "desfecho_favoravel": null, "modo_bifurcacao": null, "p_condicional": 1.0, "p_favoravel": 0.5, "atalho_acoes": 0, "atalho_turnos": 0, "fragil_atalho": null, "prestigio_min": 6, "fragil": 0.6, "evento_unico": false, "janela": 0}
+    ]},
+    {"id": "Contrabandista-A", "papel": "Contrabandista", "variante": "A", "marcos": [
+      {"id": "Contrabandista-A-1", "tipo": "estado_e_contrato_risco", "acoes": 2, "custo": 3, "coop": true, "parceiros": 1, "turno_min": 8, "bifurcacao": "B2g", "desfecho_favoravel": ["sem_garantia"], "modo_bifurcacao": "risco", "p_condicional": 1.0, "p_favoravel": 0.45, "atalho_acoes": 2, "atalho_turnos": 1, "fragil_atalho": 0.5, "prestigio_min": 0, "fragil": 0.4, "evento_unico": false, "janela": 0},
+      {"id": "Contrabandista-A-2", "tipo": "contratos", "acoes": 2, "custo": 0, "coop": true, "parceiros": 2, "turno_min": 1, "bifurcacao": null, "desfecho_favoravel": null, "modo_bifurcacao": null, "p_condicional": 1.0, "p_favoravel": 0.5, "atalho_acoes": 0, "atalho_turnos": 0, "fragil_atalho": null, "prestigio_min": 0, "fragil": 0.6, "evento_unico": false, "janela": 0},
+      {"id": "Contrabandista-A-3", "tipo": "acao_secreta", "acoes": 2, "custo": 0, "coop": false, "parceiros": 0, "turno_min": 2, "bifurcacao": null, "desfecho_favoravel": null, "modo_bifurcacao": null, "p_condicional": 1.0, "p_favoravel": 0.5, "atalho_acoes": 0, "atalho_turnos": 0, "fragil_atalho": null, "prestigio_min": 0, "fragil": 0.3, "evento_unico": false, "janela": 3}
+    ]},
+    {"id": "Contrabandista-B", "papel": "Contrabandista", "variante": "B", "marcos": [
+      {"id": "Contrabandista-B-1", "tipo": "relogio", "acoes": 3, "custo": 2, "coop": false, "parceiros": 0, "turno_min": 6, "bifurcacao": "B3", "desfecho_favoravel": ["germina"], "modo_bifurcacao": "evento", "p_condicional": 1.0, "p_favoravel": 0.55, "atalho_acoes": 2, "atalho_turnos": 2, "fragil_atalho": 0.5, "prestigio_min": 0, "fragil": 0.05, "evento_unico": true, "janela": 0},
+      {"id": "Contrabandista-B-2", "tipo": "alvo_contrato_ou_denuncia", "acoes": 2, "custo": 3, "coop": true, "parceiros": 1, "turno_min": 1, "bifurcacao": null, "desfecho_favoravel": null, "modo_bifurcacao": null, "p_condicional": 1.0, "p_favoravel": 0.5, "atalho_acoes": 0, "atalho_turnos": 0, "fragil_atalho": null, "prestigio_min": 0, "fragil": 0.5, "evento_unico": false, "janela": 0},
+      {"id": "Contrabandista-B-3", "tipo": "caixa_e_contrato", "acoes": 1, "custo": 12, "coop": true, "parceiros": 1, "turno_min": 1, "bifurcacao": null, "desfecho_favoravel": null, "modo_bifurcacao": null, "p_condicional": 1.0, "p_favoravel": 0.5, "atalho_acoes": 0, "atalho_turnos": 0, "fragil_atalho": null, "prestigio_min": 0, "fragil": 0.5, "evento_unico": false, "janela": 0}
+    ]},
+    {"id": "Contrabandista-C", "papel": "Contrabandista", "variante": "C", "marcos": [
+      {"id": "Contrabandista-C-1", "tipo": "denuncia_por_terceiro", "acoes": 4, "custo": 3, "coop": true, "parceiros": 1, "turno_min": 3, "bifurcacao": null, "desfecho_favoravel": null, "modo_bifurcacao": null, "p_condicional": 1.0, "p_favoravel": 0.5, "atalho_acoes": 0, "atalho_turnos": 0, "fragil_atalho": null, "prestigio_min": 0, "fragil": 0.3, "evento_unico": false, "janela": 3},
+      {"id": "Contrabandista-C-2", "tipo": "denuncia_janela", "acoes": 3, "custo": 3, "coop": false, "parceiros": 0, "turno_min": 3, "bifurcacao": null, "desfecho_favoravel": null, "modo_bifurcacao": null, "p_condicional": 1.0, "p_favoravel": 0.5, "atalho_acoes": 0, "atalho_turnos": 0, "fragil_atalho": null, "prestigio_min": 0, "fragil": 0.3, "evento_unico": false, "janela": 3},
+      {"id": "Contrabandista-C-3", "tipo": "contrato", "acoes": 1, "custo": 3, "coop": true, "parceiros": 1, "turno_min": 1, "bifurcacao": null, "desfecho_favoravel": null, "modo_bifurcacao": null, "p_condicional": 1.0, "p_favoravel": 0.5, "atalho_acoes": 0, "atalho_turnos": 0, "fragil_atalho": null, "prestigio_min": 0, "fragil": 0.6, "evento_unico": false, "janela": 0}
+    ]},
+    {"id": "Consul-A", "papel": "Consul", "variante": "A", "marcos": [
+      {"id": "Consul-A-1", "tipo": "bifurcacao", "acoes": 3, "custo": 4, "coop": false, "parceiros": 0, "turno_min": 7, "bifurcacao": "B1", "desfecho_favoravel": ["arrendamento"], "modo_bifurcacao": "evento", "p_condicional": 1.0, "p_favoravel": 0.2, "atalho_acoes": 2, "atalho_turnos": 2, "fragil_atalho": 0.5, "prestigio_min": 0, "fragil": 0.1, "evento_unico": true, "janela": 0},
+      {"id": "Consul-A-2", "tipo": "alvo_contrato_ou_denuncia", "acoes": 2, "custo": 4, "coop": true, "parceiros": 1, "turno_min": 1, "bifurcacao": null, "desfecho_favoravel": null, "modo_bifurcacao": null, "p_condicional": 1.0, "p_favoravel": 0.5, "atalho_acoes": 0, "atalho_turnos": 0, "fragil_atalho": null, "prestigio_min": 0, "fragil": 0.5, "evento_unico": false, "janela": 0},
+      {"id": "Consul-A-3", "tipo": "contrato", "acoes": 2, "custo": 0, "coop": true, "parceiros": 1, "turno_min": 1, "bifurcacao": null, "desfecho_favoravel": null, "modo_bifurcacao": null, "p_condicional": 1.0, "p_favoravel": 0.5, "atalho_acoes": 0, "atalho_turnos": 0, "fragil_atalho": null, "prestigio_min": 0, "fragil": 0.6, "evento_unico": false, "janela": 0}
+    ]},
+    {"id": "Consul-B", "papel": "Consul", "variante": "B", "marcos": [
+      {"id": "Consul-B-1", "tipo": "bifurcacao", "acoes": 3, "custo": 3, "coop": false, "parceiros": 0, "turno_min": 7, "bifurcacao": "B1", "desfecho_favoravel": ["tratado"], "modo_bifurcacao": "evento", "p_condicional": 1.0, "p_favoravel": 0.35, "atalho_acoes": 3, "atalho_turnos": 2, "fragil_atalho": 0.5, "prestigio_min": 0, "fragil": 0.0, "evento_unico": true, "janela": 0},
+      {"id": "Consul-B-2", "tipo": "contrato", "acoes": 2, "custo": 0, "coop": true, "parceiros": 1, "turno_min": 1, "bifurcacao": null, "desfecho_favoravel": null, "modo_bifurcacao": null, "p_condicional": 1.0, "p_favoravel": 0.5, "atalho_acoes": 0, "atalho_turnos": 0, "fragil_atalho": null, "prestigio_min": 0, "fragil": 0.5, "evento_unico": false, "janela": 0},
+      {"id": "Consul-B-3", "tipo": "contrato", "acoes": 1, "custo": 0, "coop": true, "parceiros": 1, "turno_min": 1, "bifurcacao": null, "desfecho_favoravel": null, "modo_bifurcacao": null, "p_condicional": 1.0, "p_favoravel": 0.5, "atalho_acoes": 0, "atalho_turnos": 0, "fragil_atalho": null, "prestigio_min": 0, "fragil": 0.6, "evento_unico": false, "janela": 0}
+    ]},
+    {"id": "Consul-C", "papel": "Consul", "variante": "C", "marcos": [
+      {"id": "Consul-C-1", "tipo": "prova", "acoes": 3, "custo": 3, "coop": false, "parceiros": 0, "turno_min": 2, "bifurcacao": null, "desfecho_favoravel": null, "modo_bifurcacao": null, "p_condicional": 1.0, "p_favoravel": 0.5, "atalho_acoes": 0, "atalho_turnos": 0, "fragil_atalho": null, "prestigio_min": 0, "fragil": 0.4, "evento_unico": false, "janela": 0},
+      {"id": "Consul-C-2", "tipo": "estado_e_acao_risco", "acoes": 2, "custo": 2, "coop": false, "parceiros": 0, "turno_min": 8, "bifurcacao": "B2g", "desfecho_favoravel": ["sem_garantia"], "modo_bifurcacao": "risco", "p_condicional": 1.0, "p_favoravel": 0.45, "atalho_acoes": 2, "atalho_turnos": 1, "fragil_atalho": 0.5, "prestigio_min": 0, "fragil": 0.4, "evento_unico": false, "janela": 0},
+      {"id": "Consul-C-3", "tipo": "contrato", "acoes": 2, "custo": 0, "coop": true, "parceiros": 1, "turno_min": 1, "bifurcacao": null, "desfecho_favoravel": null, "modo_bifurcacao": null, "p_condicional": 1.0, "p_favoravel": 0.5, "atalho_acoes": 0, "atalho_turnos": 0, "fragil_atalho": null, "prestigio_min": 0, "fragil": 0.6, "evento_unico": false, "janela": 0}
+    ]},
+    {"id": "Empresario-A", "papel": "Empresario", "variante": "A", "marcos": [
+      {"id": "Empresario-A-1", "tipo": "indicador", "acoes": 3, "custo": 6, "coop": false, "parceiros": 0, "turno_min": 6, "bifurcacao": null, "desfecho_favoravel": null, "modo_bifurcacao": null, "p_condicional": 1.0, "p_favoravel": 0.5, "atalho_acoes": 0, "atalho_turnos": 0, "fragil_atalho": null, "prestigio_min": 0, "fragil": 0.6, "evento_unico": false, "janela": 0},
+      {"id": "Empresario-A-2", "tipo": "contratos", "acoes": 2, "custo": 0, "coop": true, "parceiros": 2, "turno_min": 1, "bifurcacao": null, "desfecho_favoravel": null, "modo_bifurcacao": null, "p_condicional": 1.0, "p_favoravel": 0.5, "atalho_acoes": 0, "atalho_turnos": 0, "fragil_atalho": null, "prestigio_min": 0, "fragil": 0.6, "evento_unico": false, "janela": 0},
+      {"id": "Empresario-A-3", "tipo": "alvo_contrato_ou_denuncia", "acoes": 3, "custo": 3, "coop": true, "parceiros": 1, "turno_min": 3, "bifurcacao": null, "desfecho_favoravel": null, "modo_bifurcacao": null, "p_condicional": 1.0, "p_favoravel": 0.5, "atalho_acoes": 0, "atalho_turnos": 0, "fragil_atalho": null, "prestigio_min": 0, "fragil": 0.5, "evento_unico": false, "janela": 0}
+    ]},
+    {"id": "Empresario-B", "papel": "Empresario", "variante": "B", "marcos": [
+      {"id": "Empresario-B-1", "tipo": "contratos", "acoes": 2, "custo": 0, "coop": true, "parceiros": 2, "turno_min": 1, "bifurcacao": null, "desfecho_favoravel": null, "modo_bifurcacao": null, "p_condicional": 1.0, "p_favoravel": 0.5, "atalho_acoes": 0, "atalho_turnos": 0, "fragil_atalho": null, "prestigio_min": 0, "fragil": 0.6, "evento_unico": false, "janela": 0},
+      {"id": "Empresario-B-2", "tipo": "denuncia_janela", "acoes": 3, "custo": 3, "coop": false, "parceiros": 0, "turno_min": 3, "bifurcacao": null, "desfecho_favoravel": null, "modo_bifurcacao": null, "p_condicional": 1.0, "p_favoravel": 0.5, "atalho_acoes": 0, "atalho_turnos": 0, "fragil_atalho": null, "prestigio_min": 0, "fragil": 0.3, "evento_unico": false, "janela": 3},
+      {"id": "Empresario-B-3", "tipo": "contrato", "acoes": 1, "custo": 2, "coop": true, "parceiros": 1, "turno_min": 8, "bifurcacao": null, "desfecho_favoravel": null, "modo_bifurcacao": null, "p_condicional": 1.0, "p_favoravel": 0.5, "atalho_acoes": 0, "atalho_turnos": 0, "fragil_atalho": null, "prestigio_min": 0, "fragil": 0.6, "evento_unico": false, "janela": 0}
+    ]},
+    {"id": "Empresario-C", "papel": "Empresario", "variante": "C", "marcos": [
+      {"id": "Empresario-C-1", "tipo": "contrato", "acoes": 2, "custo": 0, "coop": true, "parceiros": 1, "turno_min": 1, "bifurcacao": null, "desfecho_favoravel": null, "modo_bifurcacao": null, "p_condicional": 1.0, "p_favoravel": 0.5, "atalho_acoes": 0, "atalho_turnos": 0, "fragil_atalho": null, "prestigio_min": 0, "fragil": 0.5, "evento_unico": false, "janela": 0},
+      {"id": "Empresario-C-2", "tipo": "decreto_ou_votacao", "acoes": 2, "custo": 3, "coop": true, "parceiros": 1, "turno_min": 8, "bifurcacao": null, "desfecho_favoravel": null, "modo_bifurcacao": null, "p_condicional": 1.0, "p_favoravel": 0.5, "atalho_acoes": 0, "atalho_turnos": 0, "fragil_atalho": null, "prestigio_min": 0, "fragil": 0.3, "evento_unico": false, "janela": 0},
+      {"id": "Empresario-C-3", "tipo": "contrato", "acoes": 1, "custo": 2, "coop": true, "parceiros": 1, "turno_min": 1, "bifurcacao": null, "desfecho_favoravel": null, "modo_bifurcacao": null, "p_condicional": 1.0, "p_favoravel": 0.5, "atalho_acoes": 0, "atalho_turnos": 0, "fragil_atalho": null, "prestigio_min": 0, "fragil": 0.6, "evento_unico": false, "janela": 0}
+    ]}
+  ]
+}
