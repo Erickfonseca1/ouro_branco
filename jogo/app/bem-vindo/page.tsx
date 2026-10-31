@@ -10,7 +10,7 @@ export default async function PaginaBemVindo() {
   await connection()
   const jogador = await jogadorAtual()
   if (!jogador) redirect('/entrar')
-  if (jogador.bem_vindo) redirect('/caixa')
+  if (jogador.bem_vindo) redirect('/gazeta')
   const personagem = papel(jogador.papel)
   if (!personagem) redirect('/entrar')
   return <Bemvindo personagem={personagem} />

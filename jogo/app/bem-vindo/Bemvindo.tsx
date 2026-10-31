@@ -35,7 +35,7 @@ export default function Bemvindo({ personagem }: { personagem: Personagem }) {
   async function concluir() {
     setEnviando(true)
     await fetch('/api/eu/bem-vindo', { method: 'POST' })
-    router.push('/caixa')
+    router.push('/gazeta')
   }
 
   const ultimo = passo === total - 1

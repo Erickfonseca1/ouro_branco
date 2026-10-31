@@ -18,7 +18,8 @@ export async function POST(req: Request) {
   if (!jogador) return NextResponse.json({ erro: 'Esse telefone não está nesta partida.' }, { status: 404 })
 
   const token = entrar(jogador, partida)
-  const res = NextResponse.json({ destino: jogador.bem_vindo ? '/caixa' : '/bem-vindo' })
+  // destino: depois do onboarding, o jogo abre na Gazeta
+  const res = NextResponse.json({ destino: jogador.bem_vindo ? '/gazeta' : '/bem-vindo' })
   res.cookies.set(COOKIE, token, { httpOnly: true, sameSite: 'lax', path: '/', maxAge: 60 * 60 * 24 * 90 })
   return res
 }
