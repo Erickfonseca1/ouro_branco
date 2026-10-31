@@ -1,0 +1,73 @@
+/* Hallmark · waive 11 · tokens da identidade v2 (prototipo/tokens.css) · modo claro apenas */
+:root {
+  --space-xs: 8px; --space-sm: 12px; --space-md: 16px; --space-lg: 24px; --space-xl: 40px; --space-2xl: 64px;
+  --paper: oklch(94.3% 0.021 82); --paper-2: oklch(98% 0.009 85); --paper-3: oklch(90.5% 0.026 82);
+  --ink: oklch(21.9% 0.007 78); --ink-2: oklch(44.6% 0.020 79); --muted: oklch(52% 0.018 80);
+  --rule: oklch(85.2% 0.031 82);
+  --accent: oklch(52.1% 0.158 29); --accent-ink: oklch(98% 0.009 85); --focus: oklch(55% 0.19 29);
+  --gold: oklch(70.4% 0.132 81); --error: oklch(52% 0.19 27);
+  --display: "Anton", "Impact", sans-serif;
+  --body: "Source Serif 4", Georgia, ui-serif, serif;
+  --mono: "IBM Plex Mono", ui-monospace, monospace;
+  --radius: 4px;
+}
+
+*, *::before, *::after { box-sizing: border-box; }
+html, body { overflow-x: clip; margin: 0; }
+body { background: var(--paper); color: var(--ink); font: 400 1rem/1.5 var(--body); }
+:focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; }
+h1, h2, h3 { font-weight: 400; line-height: 1.05; margin: 0; overflow-wrap: break-word; }
+h1, h2 { font-family: var(--display); letter-spacing: 0.005em; }
+h3 { font: 700 1.1rem/1.2 var(--body); }
+p { margin: 0; }
+
+.tela { max-width: 440px; margin: 0 auto; padding: var(--space-lg) var(--space-md) var(--space-2xl); min-height: 100vh; }
+.topo { display: flex; justify-content: space-between; align-items: center; padding-bottom: var(--space-sm); border-bottom: 3px double var(--ink); margin-bottom: var(--space-xl); }
+.topo a { font: 400 1.25rem/1 var(--display); color: var(--ink); text-decoration: none; }
+.topo span { font: 400 0.875rem/1 var(--mono); color: var(--ink-2); }
+
+.inicio { display: flex; flex-direction: column; justify-content: center; min-height: 100vh; text-align: left; }
+.inicio h1 { font-size: clamp(4rem, 22vw, 6.5rem); }
+.inicio .lead { font-size: 1.2rem; color: var(--ink-2); margin: var(--space-md) 0 var(--space-xl); max-width: 30ch; }
+.regua { border-top: 3px double var(--ink); padding-top: var(--space-md); }
+
+.titulo { font-size: 2.5rem; padding-bottom: var(--space-xs); border-bottom: 3px double var(--ink); margin-bottom: var(--space-lg); }
+.ajuda { color: var(--ink-2); font-size: 0.95rem; margin-bottom: var(--space-lg); }
+
+.botao, button.botao { display: inline-flex; align-items: center; justify-content: center; min-height: 52px; padding: 0 var(--space-lg); border: 1px solid var(--ink); border-radius: var(--radius); background: var(--ink); color: var(--paper-2); font: 400 1.25rem/1 var(--display); letter-spacing: 0.01em; text-decoration: none; cursor: pointer; width: 100%; }
+.botao:hover { background: var(--ink-2); }
+.botao.acento { background: var(--accent); border-color: var(--accent); color: var(--accent-ink); }
+.botao.acento:hover { background: oklch(46% 0.158 29); }
+.botao.contorno { background: transparent; color: var(--ink); }
+.botao.contorno:hover { background: var(--paper-3); }
+.botao:disabled { opacity: 0.5; cursor: default; }
+.botao + .botao { margin-top: var(--space-sm); }
+.botao.pequeno { min-height: 40px; width: auto; font-size: 1rem; padding: 0 var(--space-md); }
+
+.campo { display: grid; gap: 4px; margin-bottom: var(--space-md); }
+.campo label, .campo legend { font-size: 0.9rem; color: var(--ink-2); }
+input[type="text"], input[type="tel"] { width: 100%; min-height: 48px; padding: 0 var(--space-sm); border: 1px solid var(--ink-2); border-radius: var(--radius); background: var(--paper-2); color: var(--ink); font: 400 1rem var(--body); }
+input.codigo { font: 400 1.6rem/1 var(--mono); letter-spacing: 0.2em; text-transform: uppercase; text-align: center; }
+
+.linha-participante { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) auto; gap: var(--space-xs); align-items: end; padding: var(--space-sm) 0; border-bottom: 1px solid var(--rule); }
+.linha-participante label { display: flex; align-items: center; gap: 4px; font-size: 0.8rem; color: var(--ink-2); white-space: nowrap; }
+.remover { min-height: 48px; padding: 0 var(--space-xs); border: 0; background: none; color: var(--ink-2); font: 400 0.9rem var(--body); text-decoration: underline; cursor: pointer; }
+.erro { color: var(--error); margin: var(--space-sm) 0; font-size: 0.95rem; }
+
+.codigo-grande { font: 400 4rem/1 var(--mono); letter-spacing: 0.12em; padding: var(--space-lg) 0; text-align: center; border-top: 3px double var(--ink); border-bottom: 3px double var(--ink); margin: var(--space-lg) 0; }
+
+.retrato-grande { display: block; width: 100%; max-width: 280px; aspect-ratio: 4 / 5; object-fit: cover; object-position: 50% 20%; margin: 0 auto var(--space-lg); border: 1px solid var(--rule); }
+.papel-nome { font: 400 2rem/1.05 var(--display); }
+.papel-funcao { color: var(--ink-2); margin-top: 4px; }
+.passos { display: flex; gap: 6px; margin: var(--space-xl) 0 var(--space-lg); }
+.passos i { flex: 1; height: 3px; background: var(--rule); }
+.passos i.on { background: var(--ink); }
+.passo h2 { font-size: 2rem; margin-bottom: var(--space-md); }
+.passo p { margin-bottom: var(--space-md); font-size: 1.05rem; }
+
+.caixa-lista { list-style: none; margin: 0; padding: 0; }
+.caixa-lista li { padding: var(--space-md) 0; border-bottom: 1px solid var(--rule); }
+.caixa-lista .quando { display: block; font: 400 0.8rem var(--mono); color: var(--ink-2); margin-bottom: 4px; }
+.caixa-lista .nova { color: var(--accent); font-weight: 700; }
+.vazio { color: var(--ink-2); padding: var(--space-lg) 0; }
+.caixa-lista .nova { margin-left: 8px; }
