@@ -1,0 +1,24 @@
+# Uso noturno: `docker compose up -d` para ligar, `docker compose down` para desligar.
+# Só o app fica acessível em localhost:3000. Para os amigos acessarem pela internet,
+# use o perfil "tunel" (veja o README): `docker compose --profile tunel up -d`.
+services:
+  app:
+    build: .
+    image: ouro-branco:local
+    restart: "no"
+    ports:
+      - "127.0.0.1:3000:3000"
+    volumes:
+      - ./data:/app/data
+    environment:
+      - TZ=America/Manaus
+
+  # Túnel rápido da Cloudflare: não precisa de conta nem de domínio.
+  # O endereço público (trycloudflare.com) aparece nos logs e muda a cada vez.
+  tunel:
+    image: cloudflare/cloudflared:latest
+    profiles: ["tunel"]
+    command: tunnel --no-autoupdate --url http://app:3000
+    depends_on:
+      - app
+    restart: "no"
