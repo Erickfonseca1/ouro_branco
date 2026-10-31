@@ -1,0 +1,14 @@
+[
+ {
+  "mode": "redesign",
+  "depth": "full",
+  "scope": "app",
+  "theme": "brand",
+  "shape": "app screen",
+  "axes": "light/display-condensed/warm",
+  "nav": "bottom tabs kept",
+  "signature": "Gazeta front page grammar",
+  "prompt": "Ouro Branco game prototype panels",
+  "date": "2026-10-31"
+ }
+]

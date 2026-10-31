@@ -1,0 +1,46 @@
+:root {
+  --space-3xs: 2px; --space-2xs: 4px; --space-xs: 8px; --space-sm: 12px; --space-md: 16px; --space-lg: 24px; --space-xl: 40px; --space-2xl: 64px; --space-3xl: 96px; --space-4xl: 144px;
+  --text-xs: 0.75rem; --text-sm: 0.875rem; --text-md: 1rem; --text-lg: 1.2rem; --text-xl: 1.44rem; --text-2xl: 1.728rem; --text-3xl: 2.074rem;
+  --text-display-s: 1.44rem; --text-display: 1.728rem; --text-section: 1.2rem; --text-title: 1rem; --text-lead: 1rem;
+  --ease-out: cubic-bezier(0.16, 1, 0.3, 1); --ease-in: cubic-bezier(0.7, 0, 0.84, 0); --ease-in-out: cubic-bezier(0.65, 0, 0.35, 1);
+  --dur-micro: 120ms; --dur-short: 220ms; --dur-long: 420ms;
+  --color-error: oklch(52% 0.19 27); --color-success: oklch(50% 0.12 150);
+  --container: 1440px; --gutter: 64px; --gap-columns: 32px; --section-gap-s: 120px; --section-gap: 144px; --section-gap-l: 176px;
+  --z-base: 1; --z-raised: 10; --z-dropdown: 100; --z-sticky: 200; --z-sticky-nav: 300; --z-modal: 400; --z-toast: 500; --z-tooltip: 600;
+  /* Ouro Branco: papel, tinta, ouro, floresta, lacre, látex (05-identidade-visual.md) */
+  --color-paper: oklch(94.3% 0.021 82); --color-paper-2: oklch(98% 0.009 85); --color-paper-3: oklch(90.5% 0.026 82);
+  --color-ink: oklch(21.9% 0.007 78); --color-ink-2: oklch(44.6% 0.020 79); --color-muted: oklch(52% 0.018 80);
+  --color-rule: oklch(85.2% 0.031 82); --color-rule-strong: oklch(21.9% 0.007 78);
+  --color-accent: oklch(52.1% 0.158 29); --color-accent-ink: oklch(98% 0.009 85); --color-focus: oklch(55% 0.19 29);
+  --color-gold: oklch(70.4% 0.132 81); --color-gold-ink: oklch(21.9% 0.007 78);
+  --color-forest: oklch(42.8% 0.068 153); --color-forest-2: oklch(50.8% 0.080 154);
+  --color-river: oklch(62.1% 0.067 80); --color-river-black: oklch(27.2% 0.009 67);
+  --color-on-map: oklch(98% 0.009 85); --color-scrim: oklch(18% 0.01 70 / 0.55);
+  --color-rumor: oklch(60% 0.016 81); --color-hint: oklch(70.4% 0.132 81); --color-proof: oklch(52.1% 0.158 29);
+  --p-ab: oklch(41% 0.107 23); --p-bg: oklch(51.1% 0.041 231); --p-es: oklch(54.6% 0.088 79); --p-am: oklch(44.1% 0.061 306);
+  --p-ta: oklch(49.9% 0.058 170); --p-ew: oklch(41.7% 0.064 249); --p-ma: oklch(44.6% 0.053 38); --p-x: oklch(62.7% 0.005 80);
+  --font-display: "Anton", "Impact", sans-serif; --font-body: "Source Serif 4", Georgia, ui-serif, serif; --font-outlier: "IBM Plex Mono", ui-monospace, monospace;
+  --text-figure: 7.5rem; --text-headline: 2.75rem; --text-screen: 2.5rem;
+  --radius-card: 4px; --radius-sheet: 12px; --radius-pill: 999px; --rule-hair: 1px; --shadow-card: none;
+  --app: 440px;
+  --tracking-display: 0.005em;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --color-paper: oklch(19.7% 0.007 78); --color-paper-2: oklch(23.7% 0.009 75); --color-paper-3: oklch(27% 0.011 76);
+    --color-ink: oklch(94.3% 0.021 82); --color-ink-2: oklch(74.7% 0.025 82); --color-muted: oklch(66% 0.02 80);
+    --color-rule: oklch(33.2% 0.014 76); --color-rule-strong: oklch(94.3% 0.021 82);
+    --color-accent: oklch(56% 0.16 29); --color-focus: oklch(66% 0.18 29);
+    --color-forest: oklch(39.7% 0.059 154); --color-forest-2: oklch(46.8% 0.073 153);
+    --color-river: oklch(57% 0.06 81); --color-river-black: oklch(15.9% 0.004 85);
+  }
+}
+:root[data-theme="dark"] {
+  --color-paper: oklch(19.7% 0.007 78); --color-paper-2: oklch(23.7% 0.009 75); --color-paper-3: oklch(27% 0.011 76);
+  --color-ink: oklch(94.3% 0.021 82); --color-ink-2: oklch(74.7% 0.025 82); --color-muted: oklch(66% 0.02 80);
+  --color-rule: oklch(33.2% 0.014 76); --color-rule-strong: oklch(94.3% 0.021 82);
+  --color-accent: oklch(56% 0.16 29); --color-focus: oklch(66% 0.18 29);
+  --color-forest: oklch(39.7% 0.059 154); --color-forest-2: oklch(46.8% 0.073 153);
+  --color-river: oklch(57% 0.06 81); --color-river-black: oklch(15.9% 0.004 85);
+}

@@ -98,7 +98,7 @@ Estas telas cheias usam o espírito do "7–0":
 1. **1 tela = 1 decisão.** Enviar ordens é um passo a passo (2 abertas → 1 secreta → venda → confirmar), nunca um formulário enorme.
 2. **Limites de texto:** 40 palavras por carta, 25 por nota da Gazeta, 3 linhas por detalhe no mapa.
 3. **Números antes de palavras.** "P 8,25 ▼0,75" em vez de "o preço caiu para 8,25".
-4. **Ícones fixos** para recursos e custos: ₵, 🟤, ★, ⌛, ✊, ✿. Um ícone sempre significa a mesma coisa.
+4. **Ícones fixos** para recursos e custos: moeda, lote, estrela, ampulheta, punho, flor. Um ícone sempre significa a mesma coisa. São desenhados em SVG de traço fino, nunca emoji.
 5. **Feito para celular.** Navegação inferior com 4 abas (Rio · Bolsa · Praça · Caderno) e um botão flutuante "Ordens" em lacre, com um ponto quando houver pendência.
 6. **Toda tela mostra o prazo do turno:** "Fecha qui 21h · faltam 14h".
 7. **Animação só onde conta:** vapor se movendo, selo trincando, preço caindo. Nada decorativo.
@@ -110,6 +110,19 @@ Estas telas cheias usam o espírito do "7–0":
 - Gravuras da Gazeta: um banco de 30 a 50 imagens temáticas (vapor, teatro, seringueiro, porto, tribunal, febre, sementes, telegrama) reutilizadas por tag.
 - Ícones de traço fino, monocromáticos.
 
-## 8. Próximo passo
+## 8. Sistema v2 (repaginada)
+
+A paleta e as fontes continuam as mesmas. O que mudou foi o acabamento, que agora segue a gramática de jornal da Gazeta em todos os painéis.
+
+- **Tokens:** todas as cores e fontes moram em `prototipo/tokens.css`, em OKLCH, com modo escuro derivado. Nenhuma cor solta no código.
+- **Réguas, não cartões:** fio duplo sob o título de cada painel, fios finos entre linhas. Caixas só para o que é interativo (cartas, ações, escolhas).
+- **Rótulos:** na serifada, um passo menor, em caixa normal. Nada de rótulo em caixa-alta espaçada nem "sobretítulo" acima de título.
+- **Anton** fica só para títulos, números grandes e botões. **IBM Plex Mono** fica só para números pequenos: prazos, custos, eixos.
+- **Cores com papel definido:** ouro sinaliza (prestígio, alerta de proximidade, demanda), lacre age e ameaça (botão principal, prova, reivindicação), floresta é o mapa.
+- **Ícones:** um conjunto próprio em SVG, sem emoji.
+- **Desktop:** cada painel abre em duas colunas. No celular, coluna única com abas embaixo.
+- **Acessibilidade:** anel de foco visível, `prefers-reduced-motion` respeitado, Esc fecha as folhas.
+
+## 9. Próximo passo
 
 Fazer um **protótipo visual** de 3 telas (Rio, Bolsa e uma carta de personagem não-jogável) em HTML, para validar paleta, tipografia e quantidade de texto antes de qualquer código de verdade.
