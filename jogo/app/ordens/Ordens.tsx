@@ -4,12 +4,13 @@ import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { useEffect, useState } from 'react'
 import type { Ordens as OrdensTipo } from '@/lib/motor'
-import { faltam, formatarPrazo } from '@/lib/tempo'
+import { formatarPrazo } from '@/lib/tempo'
 import * as R from '@/lib/regras'
 import type { ChaveDica } from '@/lib/ajuda'
 import VotarTurno from '../_quadro/VotarTurno'
 import Ajuda from '../_quadro/Ajuda'
 import Dica from '../_quadro/Dica'
+import RelogioTurno, { Contagem } from '../_quadro/RelogioTurno'
 
 type Dados = ReturnType<typeof import('@/lib/estado').listaParaOrdens>
 type Slot = { tipo: string; npc: string; metodo: string; alvo: string }
@@ -220,7 +221,8 @@ export default function Ordens({ dados }: { dados: Dados }) {
       </header>
       <h1 className="titulo">Ordens</h1>
       <p className="quem-sou">{dados.eu}</p>
-      <p className="ajuda">Fecha {formatarPrazo(dados.prazo)}, {faltam(dados.prazo)}. Quem não enviar recebe a ordem padrão: paga o aviamento e vende tudo à casa comercial.</p>
+      <p className="ajuda">Fecha {formatarPrazo(dados.prazo)}, em <Contagem prazo={dados.prazo} agora={dados.agora} />. Quem não enviar recebe a ordem padrão: paga o aviamento e vende tudo à casa comercial.</p>
+      <RelogioTurno turno={dados.turno} prazo={dados.prazo} agora={dados.agora} status={dados.status} semTexto />
       <Dica chave="ordens-intro" vistas={V} />
 
       <form onSubmit={enviar} noValidate>

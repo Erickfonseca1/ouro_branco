@@ -2,12 +2,12 @@ import { connection } from 'next/server'
 import { redirect } from 'next/navigation'
 import { jogadorAtual } from '@/lib/sessao'
 import { carregarEstado } from '@/lib/estado'
-import { faltam } from '@/lib/tempo'
 import { Quadro } from '../_quadro/Quadro'
 import Fechar from '../_quadro/Fechar'
 import VotarTurno from '../_quadro/VotarTurno'
 import TutorialTurno from '../_quadro/TutorialTurno'
 import Dica from '../_quadro/Dica'
+import { Contagem } from '../_quadro/RelogioTurno'
 import { ULTIMO_TURNO_TUTORIAL } from '@/lib/ajuda'
 
 export const instant = false
@@ -61,7 +61,7 @@ export default async function Gazeta() {
         <section className="bloco" aria-labelledby="pr-t">
           <h3 id="pr-t">Próximos prazos</h3>
           <ul className="prazos">
-            <li>Fechamento do turno {v.partida.turno} <span className="mono">{faltam(v.partida.prazo)}</span></li>
+            <li>Fechamento do turno {v.partida.turno} <Contagem prazo={v.partida.prazo} agora={v.partida.agora} /></li>
             {v.partida.reivindicador && <li>Reivindicação em curso de {v.partida.reivindicador}</li>}
           </ul>
           <Dica chave="votar" vistas={v.dicasVistas} />

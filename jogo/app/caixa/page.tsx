@@ -1,10 +1,12 @@
 import { connection } from 'next/server'
 import { redirect } from 'next/navigation'
-import { db, type Mensagem } from '@/lib/db'
+import { db, type Mensagem, type Partida } from '@/lib/db'
+import { resolverDevidos } from '@/lib/motor'
 import { jogadorAtual } from '@/lib/sessao'
 import { papel } from '@/lib/papeis'
 import MarcarLidas from './MarcarLidas'
 import Ajuda from '../_quadro/Ajuda'
+import RelogioTurno from '../_quadro/RelogioTurno'
 import Link from 'next/link'
 
 function quando(utc: string) {
@@ -25,6 +27,8 @@ export default async function Caixa() {
   if (!jogador) redirect('/entrar')
   if (!jogador.bem_vindo) redirect('/bem-vindo')
 
+  resolverDevidos(jogador.partida_id)
+  const partida = db.prepare('SELECT turno, prazo, status FROM partidas WHERE id = ?').get(jogador.partida_id) as Pick<Partida, 'turno' | 'prazo' | 'status'>
   const mensagens = db
     .prepare('SELECT id, texto, lida, criada_em FROM caixa WHERE jogador_id = ? ORDER BY id DESC')
     .all(jogador.id) as Mensagem[]
@@ -54,6 +58,7 @@ export default async function Caixa() {
         </ul>
       )}
 
+      <RelogioTurno turno={partida.turno} prazo={partida.prazo} agora={Date.now()} status={partida.status} semTexto />
       <MarcarLidas />
     </main>
   )

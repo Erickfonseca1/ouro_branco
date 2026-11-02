@@ -1,5 +1,6 @@
 import Link from 'next/link'
-import { formatarPrazo, faltam } from '@/lib/tempo'
+import { anoDoTurno } from '@/lib/tempo'
+import RelogioTurno from './RelogioTurno'
 import type { Visao } from '@/lib/estado'
 import type { Pagina } from '@/lib/ajuda'
 import Ajuda from './Ajuda'
@@ -11,10 +12,6 @@ const ABAS = [
   { href: '/praca', nome: 'Praça' },
   { href: '/caderno', nome: 'Caderno' },
 ]
-
-export function anoDoTurno(turno: number) {
-  return 1890 + 2 * (turno - 1)
-}
 
 // Moldura de todas as telas de jogo: cabeçalho com o turno, navegação inferior e botão Ordens.
 export function Quadro({ v, ativo, children }: { v: Visao; ativo: string; children: React.ReactNode }) {
@@ -34,9 +31,7 @@ export function Quadro({ v, ativo, children }: { v: Visao; ativo: string; childr
       <div className="barra-turno">
         <span>Turno {partida.turno}, {anoDoTurno(partida.turno)}</span>
         <span className="quem-sou">{eu.rotulo}</span>
-        <span className="prazo">
-          {partida.status === 'aberto' ? `Fecha ${formatarPrazo(partida.prazo)}, ${faltam(partida.prazo)}` : 'Partida encerrada'}
-        </span>
+        <RelogioTurno turno={partida.turno} prazo={partida.prazo} agora={partida.agora} status={partida.status} />
       </div>
 
       <main className="tela-jogo">{children}</main>

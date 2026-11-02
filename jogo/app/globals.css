@@ -231,3 +231,20 @@ input:focus-visible, select:focus-visible { outline: 2px solid var(--focus); out
 .recebidas { margin-top: var(--space-md); }
 .tela-ordens { padding-bottom: var(--space-lg); }
 .botao + .botao, .botao.contorno + .botao { margin-top: var(--space-sm); }
+
+/* Contagem e tela cheia de fechamento do turno */
+.contagem { font-family: var(--mono); font-variant-numeric: tabular-nums; }
+.contagem.urgente { color: var(--accent); font-weight: 700; }
+.fechamento { position: fixed; inset: 0; z-index: 1000; display: grid; place-items: center; padding: var(--space-lg); background: var(--accent); color: var(--accent-ink); text-align: center; animation: fechamento-entra 220ms var(--ease-out, ease-out); }
+.fechamento-miolo { display: grid; justify-items: center; gap: var(--space-md); max-width: 440px; }
+.fechamento-ano { font: 400 1.2rem var(--mono); opacity: 0.85; margin: 0; }
+.fechamento h2 { font-size: clamp(2.6rem, 14vw, 4.5rem); line-height: 0.95; }
+.fechamento p { font-size: 1.15rem; margin: 0; }
+.fechamento .botao { width: auto; background: var(--paper-2); color: var(--ink); border-color: var(--paper-2); }
+.fechamento .botao:hover { background: var(--paper-3); }
+.fechamento-pulso { width: 56px; height: 56px; border-radius: 50%; border: 4px solid var(--accent-ink); animation: fechamento-pulso 1.2s ease-in-out infinite; }
+@keyframes fechamento-entra { from { opacity: 0; } to { opacity: 1; } }
+@keyframes fechamento-pulso { 0%, 100% { transform: scale(0.7); opacity: 0.5; } 50% { transform: scale(1); opacity: 1; } }
+@media (prefers-reduced-motion: reduce) {
+  .fechamento, .fechamento-pulso { animation: none; }
+}

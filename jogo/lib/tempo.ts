@@ -29,3 +29,8 @@ export function faltam(iso: string) {
   const h = Math.floor(ms / 3600000)
   return h >= 24 ? `faltam ${Math.floor(h / 24)}d ${h % 24}h` : `faltam ${h}h`
 }
+
+// Cada turno equivale a cerca de 2 anos: o turno 1 é 1890 e o 12 é 1912.
+export function anoDoTurno(turno: number) {
+  return 1890 + 2 * (turno - 1)
+}

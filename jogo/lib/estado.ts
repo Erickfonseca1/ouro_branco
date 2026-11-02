@@ -104,6 +104,7 @@ export function carregarEstado(jogadorId: number) {
       codigo: p.codigo,
       turno: p.turno,
       prazo: p.prazo,
+      agora: Date.now(),
       status: p.status,
       preco: p.preco,
       demanda: R.DEMANDA_POR_SERINGAL * seringais.length,
@@ -162,6 +163,8 @@ export function listaParaOrdens(jogadorId: number) {
   return {
     turno: v.partida.turno,
     prazo: v.partida.prazo,
+    agora: v.partida.agora,
+    status: v.partida.status,
     jogadores: v.jogadores.filter((j) => !j.eu).map((j) => ({ id: j.id, nome: j.rotulo })),
     eu: v.eu.rotulo,
     caixa: v.eu.caixa,

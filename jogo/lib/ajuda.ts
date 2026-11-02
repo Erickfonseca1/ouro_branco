@@ -11,6 +11,7 @@ export const AJUDA_PAGINAS: Record<Pagina, { titulo: string; itens: string[] }> 
       'A manchete traz o preço da borracha e os grandes acontecimentos do Amazonas.',
       'Notas e boatos são rastros de ações de outros jogadores, quase sempre sem nome.',
       'A faixa dourada avisa quando alguém reivindicou o título ou está perto de vencer.',
+      'A contagem no topo mostra quanto falta para o turno fechar. Ao zerar, uma tela avisa todos os jogadores de que o turno terminou e as ações estão sendo aplicadas.',
       'Em Próximos prazos você vê quando o turno fecha e pode votar para adiantá-lo.',
     ],
   },
