@@ -4,7 +4,6 @@ import { papel } from './papeis'
 import * as R from './regras'
 import { labelMarco, marcosDaVariante, cumprido, type Contexto } from './objetivos'
 import { resolverDevidos, type Ordens } from './motor'
-import { proximoPrazo } from './tempo'
 
 export const CORES = ['--p-ab', '--p-bg', '--p-es', '--p-am', '--p-ta', '--p-ew', '--p-ma', '--p-x'] as const
 
@@ -55,7 +54,8 @@ export function carregarEstado(jogadorId: number) {
     turnoMin: m.turno_min,
   }))
 
-  const ultimoTurno = Math.max(1, p.turno - 1)
+  // Com a partida encerrada o turno não avança: a última edição é a do próprio turno final.
+  const ultimoTurno = p.status === 'aberto' ? Math.max(1, p.turno - 1) : p.turno
   const gazetaTurno = db.prepare('SELECT tipo, texto, alvo_id FROM gazeta WHERE partida_id = ? AND turno = ? ORDER BY id').all(p.id, ultimoTurno) as {
     tipo: string
     texto: string
@@ -145,12 +145,7 @@ export function carregarEstado(jogadorId: number) {
     pistas: pistas.map((k) => ({ ...k, alvoNome: nomePor.get(k.alvo_id) })),
     ordens: ordemAtual ? (JSON.parse(ordemAtual.payload) as Ordens) : null,
     ordemEnviada: !!ordemAtual,
-    prazoProximo: formatarPrazoSeguinte(p),
   }
-}
-
-function formatarPrazoSeguinte(p: Partida) {
-  return proximoPrazo(new Date(p.prazo)).toISOString()
 }
 
 export function listaParaOrdens(jogadorId: number) {
@@ -163,6 +158,8 @@ export function listaParaOrdens(jogadorId: number) {
     metodos: Object.entries(R.METODOS).map(([id, m]) => ({ id, nome: m.nome, custo: m.custo })),
     contratosRecebidos: v.contratos.filter((c) => c.status === 'proposto' && c.recebo),
     podeReivindicar: v.eu.podeReivindicar,
+    estoque: v.eu.estoque,
+    seringais: v.eu.seringais,
     ordens: v.ordens,
     ordemEnviada: v.ordemEnviada,
     encerrado: v.partida.status !== 'aberto',

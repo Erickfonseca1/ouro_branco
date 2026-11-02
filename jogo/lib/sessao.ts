@@ -7,9 +7,10 @@ import { ECONOMIA_PAPEL, CHAVE_PAPEL, variantesDoPapel } from './objetivos'
 export const COOKIE = 'ouro_sessao'
 const ALFABETO = 'ABCDEFGHJKMNPQRSTUVWXYZ23456789' // sem I, L, O, 0, 1
 
-// Telefone só com dígitos. Aceita 10 ou 11 (DDD + número).
+// Telefone só com dígitos. Aceita DDD + número (10 ou 11 dígitos), com ou sem +55.
 export function telefone(bruto: string) {
-  const digitos = bruto.replace(/\D/g, '')
+  let digitos = bruto.replace(/\D/g, '')
+  if ((digitos.length === 12 || digitos.length === 13) && digitos.startsWith('55')) digitos = digitos.slice(2)
   return digitos.length >= 10 && digitos.length <= 11 ? digitos : null
 }
 

@@ -11,5 +11,6 @@ export default async function PaginaOrdens() {
   const j = await jogadorAtual()
   if (!j) redirect('/entrar')
   if (!j.bem_vindo) redirect('/bem-vindo')
-  return <Ordens dados={listaParaOrdens(j.id)} />
+  const dados = listaParaOrdens(j.id)
+  return <Ordens key={`${dados.turno}-${dados.ordemEnviada}`} dados={dados} />
 }

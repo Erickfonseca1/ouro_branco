@@ -31,7 +31,9 @@ export function Quadro({ v, ativo, children }: { v: Visao; ativo: string; childr
       <div className="barra-turno">
         <span>Turno {partida.turno}, {anoDoTurno(partida.turno)}</span>
         <span>{eu.nome}</span>
-        <span className="prazo">Fecha {formatarPrazo(partida.prazo)} · {faltam(partida.prazo)}</span>
+        <span className="prazo">
+          {partida.status === 'aberto' ? `Fecha ${formatarPrazo(partida.prazo)}, ${faltam(partida.prazo)}` : 'Partida encerrada'}
+        </span>
       </div>
 
       <main className="tela-jogo">{children}</main>
@@ -43,11 +45,13 @@ export function Quadro({ v, ativo, children }: { v: Visao; ativo: string; childr
           </Link>
         ))}
       </nav>
-      <div className="fab">
-        <Link href="/ordens" className="botao acento" aria-label={v.ordemEnviada ? 'Ordens enviadas, alterar' : 'Ordens pendentes'}>
-          Ordens{!v.ordemEnviada && <span className="pend">!</span>}
-        </Link>
-      </div>
+      {partida.status === 'aberto' && (
+        <div className="fab">
+          <Link href="/ordens" className="botao acento" aria-label={v.ordemEnviada ? 'Ordens enviadas, alterar' : 'Ordens pendentes'}>
+            Ordens{!v.ordemEnviada && <span className="pend">!</span>}
+          </Link>
+        </div>
+      )}
     </div>
   )
 }

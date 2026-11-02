@@ -34,7 +34,10 @@ export default function Ordens({ dados }: { dados: Dados }) {
   const [aviar, setAviar] = useState(salvas?.aviar ?? true)
   const [vender, setVender] = useState(String(salvas?.vender?.quantidade ?? ''))
   const [canal, setCanal] = useState<'casa' | 'exportador'>(salvas?.vender?.canal ?? 'casa')
-  const [proposta, setProposta] = useState({ alvo: '', valor: '' })
+  const [proposta, setProposta] = useState({
+    alvo: String(salvas?.propostas?.[0]?.alvo ?? ''),
+    valor: String(salvas?.propostas?.[0]?.valor ?? ''),
+  })
   const [respostas, setRespostas] = useState<Record<string, string>>(salvas?.respostas ?? {})
   const [reivindicar, setReivindicar] = useState(!!salvas?.reivindicar)
   const [erro, setErro] = useState('')
@@ -72,10 +75,14 @@ export default function Ordens({ dados }: { dados: Dados }) {
     setErro('')
     setOk('')
     setEnviando(true)
-    const res = await fetch('/api/ordens', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(montar()) })
+    const res = await fetch('/api/ordens', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ ...montar(), turno: dados.turno }) })
     const dados2 = await res.json()
     setEnviando(false)
-    if (!res.ok) return setErro(dados2.erro)
+    if (!res.ok) {
+      setErro(dados2.erro)
+      if (res.status === 409) router.refresh() // turno virou: recarrega com o turno novo
+      return
+    }
     setOk('Ordens salvas. Você pode trocar até o prazo.')
     router.refresh()
   }
@@ -157,13 +164,15 @@ export default function Ordens({ dados }: { dados: Dados }) {
           <h3>Economia</h3>
           <label className="campo-linha"><input type="checkbox" checked={aviar} onChange={(e) => setAviar(e.target.checked)} /> Pagar o aviamento dos seringais</label>
           <div className="par">
-            <input type="text" inputMode="numeric" aria-label="Lotes para vender" placeholder="Lotes para vender" value={vender} onChange={(e) => setVender(e.target.value.replace(/\D/g, ''))} />
+            <input type="text" inputMode="numeric" aria-label="Lotes para vender" placeholder="Lotes (em branco: todos)" value={vender} onChange={(e) => setVender(e.target.value.replace(/\D/g, ''))} />
             <select aria-label="Canal de venda" value={canal} onChange={(e) => setCanal(e.target.value as 'casa' | 'exportador')}>
               <option value="casa">Casa comercial (60%)</option>
               <option value="exportador">Exportador (75%, limite de 8)</option>
             </select>
           </div>
-          <p className="ajuda">Vender demais derruba o preço de todos.</p>
+          <p className="ajuda">
+            Estoque: {dados.estoque} lotes, mais {dados.seringais * 3} se o aviamento for pago. Em branco vende tudo; 0 não vende nada. Vender demais derruba o preço de todos.
+          </p>
         </section>
 
         <section className="bloco">

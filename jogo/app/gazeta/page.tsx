@@ -17,12 +17,15 @@ export default async function Gazeta() {
   const manchetes = v.gazeta.filter((g) => g.tipo === 'manchete')
   const notas = v.gazeta.filter((g) => g.tipo === 'nota')
   const boatos = v.gazeta.filter((g) => g.tipo === 'boato')
-  const semEdicao = v.partida.turno === 1
+  const semEdicao = v.partida.turno === 1 && v.partida.status === 'aberto'
 
   return (
     <Quadro v={v} ativo="gazeta">
       <section className="tela-secao" aria-labelledby="gz-t">
         <h2 id="gz-t" className="titulo">Gazeta de Manaus</h2>
+        {v.partida.status === 'fim' && v.partida.vencedor && (
+          <p className="faixa-alerta" role="status">A partida acabou. {v.partida.vencedor} venceu.</p>
+        )}
         {v.partida.reivindicador && (
           <p className="faixa-alerta">{v.partida.reivindicador} reivindica o título. Derrube um marco até o próximo turno.</p>
         )}
@@ -45,13 +48,15 @@ export default async function Gazeta() {
         )}
       </section>
 
-      <section className="bloco" aria-labelledby="pr-t">
-        <h3 id="pr-t">Próximos prazos</h3>
-        <ul className="prazos">
-          <li>Fechamento do turno {v.partida.turno} <span className="mono">{faltam(v.partida.prazo)}</span></li>
-          {v.partida.reivindicador && <li>Reivindicação em curso de {v.partida.reivindicador}</li>}
-        </ul>
-      </section>
+      {v.partida.status === 'aberto' && (
+        <section className="bloco" aria-labelledby="pr-t">
+          <h3 id="pr-t">Próximos prazos</h3>
+          <ul className="prazos">
+            <li>Fechamento do turno {v.partida.turno} <span className="mono">{faltam(v.partida.prazo)}</span></li>
+            {v.partida.reivindicador && <li>Reivindicação em curso de {v.partida.reivindicador}</li>}
+          </ul>
+        </section>
+      )}
 
       {v.eu.criador && v.partida.status === 'aberto' && <Fechar />}
     </Quadro>

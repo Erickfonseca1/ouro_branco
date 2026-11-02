@@ -11,16 +11,18 @@ export async function POST(req: Request) {
   const corpo = (await req.json().catch(() => null)) as { participantes?: Participante[] } | null
   const erro = (mensagem: string) => NextResponse.json({ erro: mensagem }, { status: 400 })
 
-  const lista = corpo?.participantes ?? []
-  if (lista.length < 4 || lista.length > 14) return erro('A partida tem de 4 a 14 jogadores.')
+  const lista = corpo?.participantes
+  if (!Array.isArray(lista) || lista.length < 4 || lista.length > 14) return erro('A partida tem de 4 a 14 jogadores.')
 
   const linhas: { nome: string; telefone: string; criador: number }[] = []
   for (const p of lista) {
-    const nome = p.nome?.trim() ?? ''
-    const tel = telefone(p.telefone ?? '')
+    if (typeof p !== 'object' || p === null) return erro('Lista de jogadores inválida.')
+    const nome = typeof p.nome === 'string' ? p.nome.trim() : ''
+    const tel = telefone(typeof p.telefone === 'string' ? p.telefone : '')
     if (!nome) return erro('Preencha o nome de todos os jogadores.')
+    if (nome.length > 40) return erro('Nome com mais de 40 letras.')
     if (!tel) return erro(`Telefone inválido para ${nome}. Use DDD + número.`)
-    linhas.push({ nome, telefone: tel, criador: p.criador ? 1 : 0 })
+    linhas.push({ nome, telefone: tel, criador: p.criador === true ? 1 : 0 })
   }
   if (linhas.filter((l) => l.criador).length !== 1) return erro('Marque quem cria a partida.')
   if (new Set(linhas.map((l) => l.telefone)).size !== linhas.length) return erro('Há telefones repetidos.')

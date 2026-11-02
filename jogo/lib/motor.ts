@@ -19,41 +19,110 @@ export type Ordens = {
 type Linha = Jogador
 type Contrato = { id: number; de_id: number; para_id: number; valor: number; turnos: number; status: string; turno_proposta: number }
 
-const NPC_NOME = Object.fromEntries(R.NPCS.map((n) => [n.id, n.nome])) as Record<string, string>
+const NPC_IDS = new Set<string>(R.NPCS.map((n) => n.id))
+export const ORDEM_PADRAO: Ordens = { aviar: true, vender: { quantidade: 999, canal: 'casa' } }
+const cent = (x: number) => Math.round(x * 100) / 100
 
-// Validação de ordens feita ao salvar (API). Retorna mensagem de erro ou null.
-export function validarOrdens(o: Ordens, partidaId: number, jogadorId: number): string | null {
-  const abertas = o.abertas ?? []
-  if (abertas.length > R.LIMITE_ABERTAS) return 'Só duas ações abertas por turno.'
+const ehObjeto = (x: unknown): x is Record<string, unknown> => typeof x === 'object' && x !== null && !Array.isArray(x)
+const inteiro = (x: unknown, min: number, max: number): x is number => typeof x === 'number' && Number.isInteger(x) && x >= min && x <= max
+
+// Valida e normaliza as ordens (rota e resolução usam a mesma função). Nunca lança: só aceita o que o motor entende.
+export function sanearOrdens(raw: unknown, ids: Set<number>, eu: number): { ordens: Ordens } | { erro: string } {
+  const erro = (mensagem: string) => ({ erro: mensagem })
+  if (!ehObjeto(raw)) return erro('Ordens inválidas.')
+  const alvoJogador = (x: unknown): x is number => typeof x === 'number' && x !== eu && ids.has(x)
+  const out: Ordens = {}
+
+  const abertas = raw.abertas ?? []
+  if (!Array.isArray(abertas)) return erro('Ações abertas inválidas.')
+  if (abertas.length > R.LIMITE_ABERTAS) return erro('Só duas ações abertas por turno.')
+  out.abertas = []
   for (const a of abertas) {
-    if (!(R.ABERTAS as readonly string[]).includes(a.tipo)) return 'Ação aberta inválida.'
-    if (a.tipo === 'visitar' && (!NPC_NOME[a.alvo as string] || !a.metodo || !(a.metodo in R.METODOS))) return 'Escolha quem visitar e como.'
-    if (a.tipo === 'denunciar' && !alvoValido(a.alvo, partidaId, jogadorId)) return 'Escolha quem denunciar.'
+    if (!ehObjeto(a) || typeof a.tipo !== 'string' || !(R.ABERTAS as readonly string[]).includes(a.tipo)) return erro('Ação aberta inválida.')
+    const tipo = a.tipo as R.AbertaId
+    if (tipo === 'visitar') {
+      if (typeof a.alvo !== 'string' || !NPC_IDS.has(a.alvo) || typeof a.metodo !== 'string' || !Object.hasOwn(R.METODOS, a.metodo)) return erro('Escolha quem visitar e como.')
+      out.abertas.push({ tipo, alvo: a.alvo as R.NpcId, metodo: a.metodo as R.MetodoId })
+    } else if (tipo === 'denunciar') {
+      if (!alvoJogador(a.alvo)) return erro('Escolha quem denunciar.')
+      out.abertas.push({ tipo, alvo: a.alvo })
+    } else {
+      out.abertas.push({ tipo })
+    }
   }
-  if (o.secreta) {
-    const s = o.secreta
-    if (!(R.SECRETAS as readonly string[]).includes(s.tipo)) return 'Ação secreta inválida.'
-    if (s.tipo === 'subornar' && !NPC_NOME[s.alvo as string]) return 'Escolha quem subornar.'
-    if (['plantar_boato', 'espionar'].includes(s.tipo) && !alvoValido(s.alvo, partidaId, jogadorId)) return 'Escolha o alvo.'
+
+  if (raw.secreta != null) {
+    const s = raw.secreta
+    if (!ehObjeto(s) || typeof s.tipo !== 'string' || !(R.SECRETAS as readonly string[]).includes(s.tipo)) return erro('Ação secreta inválida.')
+    const tipo = s.tipo as R.SecretaId
+    if (tipo === 'subornar') {
+      if (typeof s.alvo !== 'string' || !NPC_IDS.has(s.alvo)) return erro('Escolha quem subornar.')
+      out.secreta = { tipo, alvo: s.alvo as R.NpcId }
+    } else if (tipo === 'plantar_boato' || tipo === 'espionar') {
+      if (!alvoJogador(s.alvo)) return erro('Escolha o alvo.')
+      out.secreta = { tipo, alvo: s.alvo }
+    } else if (tipo === 'contrabandear') {
+      const q = s.quantidade ?? 0
+      if (!inteiro(q, 0, 999)) return erro('Quantidade de contrabando inválida.')
+      out.secreta = { tipo, quantidade: q }
+    } else {
+      out.secreta = { tipo }
+    }
   }
-  if (o.vender && (!Number.isInteger(o.vender.quantidade) || o.vender.quantidade < 0)) return 'Quantidade inválida.'
-  for (const p of o.propostas ?? []) {
-    if (!alvoValido(p.alvo, partidaId, jogadorId)) return 'Proposta com alvo inválido.'
-    if (!Number.isInteger(p.valor) || p.valor < 1 || p.valor > R.PROPOSTA_VALOR_MAX) return `Pagamento entre 1 e ${R.PROPOSTA_VALOR_MAX}₵.`
+
+  out.aviar = typeof raw.aviar === 'boolean' ? raw.aviar : true
+  if (raw.vender === undefined) {
+    out.vender = { ...ORDEM_PADRAO.vender! } // sem ordem de venda: vende tudo à casa comercial
+  } else {
+    const v = raw.vender
+    if (!ehObjeto(v) || !inteiro(v.quantidade, 0, 9999)) return erro('Quantidade para vender inválida.')
+    out.vender = { quantidade: v.quantidade, canal: v.canal === 'exportador' ? 'exportador' : 'casa' }
   }
-  return null
+
+  const propostas = raw.propostas ?? []
+  if (!Array.isArray(propostas) || propostas.length > 3) return erro('No máximo 3 propostas por turno.')
+  out.propostas = []
+  for (const pr of propostas) {
+    if (!ehObjeto(pr) || !alvoJogador(pr.alvo)) return erro('Proposta com alvo inválido.')
+    if (!inteiro(pr.valor, 1, R.PROPOSTA_VALOR_MAX)) return erro(`Pagamento entre 1 e ${R.PROPOSTA_VALOR_MAX}₵.`)
+    if (out.propostas.some((x) => x.alvo === pr.alvo)) return erro('Uma proposta por jogador.')
+    out.propostas.push({ alvo: pr.alvo, valor: pr.valor })
+  }
+
+  if (ehObjeto(raw.respostas)) {
+    out.respostas = {}
+    for (const [id, r] of Object.entries(raw.respostas)) {
+      if (/^\d+$/.test(id) && (r === 'aceitar' || r === 'recusar')) out.respostas[id] = r
+    }
+  }
+  out.reivindicar = raw.reivindicar === true
+  return { ordens: out }
 }
 
-function alvoValido(alvo: unknown, partidaId: number, jogadorId: number) {
-  if (typeof alvo !== 'number' || alvo === jogadorId) return false
-  return !!db.prepare('SELECT 1 FROM jogadores WHERE id = ? AND partida_id = ?').get(alvo, partidaId)
+// Lê as ordens gravadas; se estiverem corrompidas, vale a ordem padrão e o jogador é avisado.
+function lerOrdens(payload: string | undefined, ids: Set<number>, id: number, aviso: (id: number, texto: string) => void): Ordens {
+  if (!payload) return ORDEM_PADRAO
+  try {
+    const r = sanearOrdens(JSON.parse(payload), ids, id)
+    if ('ordens' in r) return r.ordens
+    aviso(id, `Suas ordens foram descartadas (${r.erro}). Valeu a ordem padrão.`)
+  } catch {
+    aviso(id, 'Suas ordens foram descartadas. Valeu a ordem padrão.')
+  }
+  return ORDEM_PADRAO
 }
 
 export function resolverDevidos(partidaId: number) {
   for (let i = 0; i < R.TURNO_FIM + 1; i++) {
     const p = db.prepare('SELECT * FROM partidas WHERE id = ?').get(partidaId) as Partida
     if (p.status !== 'aberto' || new Date(p.prazo).getTime() > Date.now()) return
-    resolverTurno(p)
+    try {
+      resolverTurno(p)
+    } catch (erro) {
+      // Um erro no turno não pode derrubar as telas de todos: registra e deixa a partida como estava.
+      console.error(`Falha ao resolver o turno ${p.turno} da partida ${p.codigo}`, erro)
+      return
+    }
   }
 }
 
@@ -69,12 +138,13 @@ function resolverTurno(p: Partida) {
     const aviso = (id: number, texto: string) => privado.get(id)?.push(texto)
     const publico: { tipo: string; texto: string; alvo?: number }[] = []
 
+    const ids = new Set(jogadores.map((j) => j.id))
     const ordens = new Map<number, Ordens>()
     for (const j of jogadores) {
       const row = db.prepare('SELECT payload FROM ordens WHERE partida_id = ? AND jogador_id = ? AND turno = ?').get(p.id, j.id, t) as
         | { payload: string }
         | undefined
-      ordens.set(j.id, row ? JSON.parse(row.payload) : { aviar: true, vender: { quantidade: 999, canal: 'casa' } })
+      ordens.set(j.id, lerOrdens(row?.payload, ids, j.id, aviso))
     }
     const seringais = db.prepare('SELECT id, dono_id FROM seringais WHERE partida_id = ? ORDER BY slot').all(p.id) as { id: number; dono_id: number | null }[]
     const donosDe = (id: number) => seringais.filter((s) => s.dono_id === id).length
@@ -85,8 +155,8 @@ function resolverTurno(p: Partida) {
       const de = jogadores.find((j) => j.id === c.de_id)!
       const para = jogadores.find((j) => j.id === c.para_id)!
       if (de.caixa >= c.valor) {
-        de.caixa -= c.valor
-        para.caixa += c.valor
+        de.caixa = cent(de.caixa - c.valor)
+        para.caixa = cent(para.caixa + c.valor)
         const restam = c.turnos - 1
         db.prepare('UPDATE contratos SET turnos = ?, status = ? WHERE id = ?').run(restam, restam > 0 ? 'ativo' : 'encerrado', c.id)
         aviso(de.id, `Contrato com ${para.nome} pago: ${c.valor}₵.`)
@@ -113,7 +183,7 @@ function resolverTurno(p: Partida) {
         publico.push({ tipo: 'nota', texto: `Dois jogadores fecharam um contrato de borracha.` })
       } else if (c.turno_proposta < t) {
         db.prepare("UPDATE contratos SET status = 'expirado' WHERE id = ?").run(c.id)
-        aviso(c.de_id, `Sua proposta a ${nomes.get(c.para_id)} expirou.`)
+        aviso(c.de_id, resposta === 'recusar' ? `${nomes.get(c.para_id)} recusou sua proposta.` : `Sua proposta a ${nomes.get(c.para_id)} expirou.`)
       }
     }
     for (const j of jogadores) {
@@ -132,7 +202,7 @@ function resolverTurno(p: Partida) {
       const n = donosDe(j.id)
       let aviados = 0
       for (let i = 0; i < n && j.caixa >= custo; i++) {
-        j.caixa -= custo
+        j.caixa = cent(j.caixa - custo)
         aviados++
       }
       j.estoque += aviados * R.PRODUCAO_POR_SERINGAL
@@ -173,7 +243,7 @@ function resolverTurno(p: Partida) {
       const bruto = Math.round(v.q * preco * taxa * 100) / 100
       const custoFrete = Math.round(v.q * R.frete(preco) * 100) / 100
       const recebido = Math.round((bruto - custoFrete) * 100) / 100
-      j.caixa += recebido
+      j.caixa = cent(j.caixa + recebido)
       j.estoque -= v.q
       aviso(j.id, `Vendeu ${v.q} lotes ${v.canal === 'exportador' ? 'ao exportador' : 'à casa comercial'}: ${bruto}₵, menos ${custoFrete}₵ de frete.`)
     }
@@ -200,7 +270,7 @@ function resolverTurno(p: Partida) {
     for (const j of jogadores) {
       const custo = R.luxo(j.prestigio)
       if (j.caixa >= custo) {
-        j.caixa -= custo
+        j.caixa = cent(j.caixa - custo)
       } else {
         j.prestigio = Math.max(0, j.prestigio - 1)
         aviso(j.id, 'Não pagou o luxo. Perdeu 1★.')
@@ -273,8 +343,14 @@ function resolverTurno(p: Partida) {
     } else if (!reiv) {
       for (const j of jogadores) {
         if (!ordens.get(j.id)?.reivindicar) continue
-        if (t < R.TURNO_REIVINDICAR || j.bloqueado_ate >= t) continue
-        if ((contagem.get(j.id) ?? 0) < R.MARCOS_PARA_REIVINDICAR) continue
+        if (t < R.TURNO_REIVINDICAR || j.bloqueado_ate >= t) {
+          aviso(j.id, 'Você ainda não pode reivindicar neste turno.')
+          continue
+        }
+        if ((contagem.get(j.id) ?? 0) < R.MARCOS_PARA_REIVINDICAR) {
+          aviso(j.id, 'Reivindicação não aberta: os 3 marcos não estavam cumpridos no fim do turno.')
+          continue
+        }
         db.prepare('UPDATE partidas SET reivindicador_id = ?, reivindicacao_turno = ? WHERE id = ?').run(j.id, t, p.id)
         publico.push({ tipo: 'manchete', texto: `${j.nome} reivindica o título. Os demais têm um turno para derrubar a reivindicação.` })
         break
@@ -295,6 +371,7 @@ function resolverTurno(p: Partida) {
     if (vencedor) {
       db.prepare("UPDATE partidas SET vencedor_id = ?, status = 'fim' WHERE id = ?").run(vencedor, p.id)
       publico.push({ tipo: 'manchete', texto: `${nomes.get(vencedor)} venceu a partida.` })
+      for (const j of jogadores) aviso(j.id, `A partida acabou: ${nomes.get(vencedor)} venceu.`)
     }
 
     // 11. Gravação.
@@ -341,7 +418,7 @@ function executarAberta(
 ) {
   if (a.tipo === 'investir') {
     if (j.caixa < R.CUSTO_SERINGAL) return aviso(j.id, 'Sem caixa para investir.')
-    j.caixa -= R.CUSTO_SERINGAL
+    j.caixa = cent(j.caixa - R.CUSTO_SERINGAL)
     const slot = seringais.length
     const id = Number(db.prepare('INSERT INTO seringais (partida_id, dono_id, slot) VALUES (?, ?, ?)').run(p.id, j.id, slot).lastInsertRowid)
     seringais.push({ id, dono_id: j.id })
@@ -349,14 +426,14 @@ function executarAberta(
   }
   if (a.tipo === 'doar') {
     if (j.caixa < R.CUSTO_DOAR || j.prestigio >= R.PRESTIGIO_MAX) return aviso(j.id, 'Doação não feita: sem caixa ou prestígio no limite.')
-    j.caixa -= R.CUSTO_DOAR
+    j.caixa = cent(j.caixa - R.CUSTO_DOAR)
     j.prestigio += 1
     aviso(j.id, 'Doação feita: +1★.')
   }
   if (a.tipo === 'visitar' && typeof a.alvo === 'string' && a.metodo) {
     const m = R.METODOS[a.metodo]
     if (j.caixa < m.custo) return aviso(j.id, 'Sem caixa para essa visita.')
-    j.caixa -= m.custo
+    j.caixa = cent(j.caixa - m.custo)
     const npc = R.NPCS.find((n) => n.id === a.alvo)!
     const [pNada, pBoato, pIndicio] = m.chances
     const r = rng()
@@ -375,8 +452,11 @@ function executarAberta(
     aviso(j.id, `${npc.nome} deixou uma pista (${nivel}) sobre ${alvo.nome}.`)
   }
   if (a.tipo === 'denunciar' && typeof a.alvo === 'number') {
-    const prova = db.prepare("SELECT 1 FROM pistas WHERE partida_id = ? AND jogador_id = ? AND alvo_id = ? AND nivel = 'prova'").get(p.id, j.id, a.alvo)
+    const prova = db
+      .prepare("SELECT id FROM pistas WHERE partida_id = ? AND jogador_id = ? AND alvo_id = ? AND nivel = 'prova' ORDER BY id LIMIT 1")
+      .get(p.id, j.id, a.alvo) as { id: number } | undefined
     if (!prova) return aviso(j.id, 'Denúncia sem prova não vai a lugar nenhum.')
+    db.prepare('DELETE FROM pistas WHERE id = ?').run(prova.id) // cada prova sustenta uma denúncia só
     const alvo = jogadores.find((x) => x.id === a.alvo)!
     alvo.prestigio = Math.max(0, alvo.prestigio - 2)
     denunciados.add(alvo.id)
@@ -398,7 +478,7 @@ function executarSecreta(
 ) {
   const custo = { subornar: 3, plantar_boato: 1, comprar_silencio: 3, espionar: 1, contrabandear: 0 }[s.tipo]
   if (j.caixa < custo) return aviso(j.id, 'Sem caixa para a ação secreta.')
-  j.caixa -= custo
+  j.caixa = cent(j.caixa - custo)
   j.secretas += 1
   if (s.tipo === 'subornar' && typeof s.alvo === 'string') {
     const npc = R.NPCS.find((n) => n.id === s.alvo)!
@@ -441,7 +521,7 @@ function executarSecreta(
     const q = Math.min(s.quantidade ?? 0, j.estoque)
     if (q > 0) {
       const ganho = Math.round(q * R.PRECO_EXPORTADOR * preco * 100) / 100
-      j.caixa += ganho
+      j.caixa = cent(j.caixa + ganho)
       j.estoque -= q
       aviso(j.id, `Contrabando: ${q} lotes vendidos por ${ganho}₵.`)
       if (rng() < 0.5) publico.push({ tipo: 'nota', texto: 'Contrabando no porto. Ninguém sabe de quem é a carga.' })
