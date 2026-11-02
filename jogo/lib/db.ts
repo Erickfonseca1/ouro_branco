@@ -5,13 +5,14 @@ import path from 'node:path'
 const globalDb = globalThis as unknown as { __ouro?: DatabaseSync }
 
 // Esquema em SQL simples, portável para Postgres/Supabase depois.
+// journal_mode = DELETE (sem WAL): o WAL usa memória compartilhada e falha em bind mounts do Docker no Mac.
 function abrir(): DatabaseSync {
   const dir = path.join(process.cwd(), 'data')
   fs.mkdirSync(dir, { recursive: true })
   const db = new DatabaseSync(path.join(dir, 'ouro.db'))
   db.exec(`
     PRAGMA busy_timeout = 5000;
-    PRAGMA journal_mode = WAL;
+    PRAGMA journal_mode = DELETE;
     PRAGMA foreign_keys = ON;
     CREATE TABLE IF NOT EXISTS partidas (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -110,6 +111,12 @@ function abrir(): DatabaseSync {
       demanda INTEGER NOT NULL,
       PRIMARY KEY (partida_id, turno)
     );
+    CREATE TABLE IF NOT EXISTS votos_turno (
+      partida_id INTEGER NOT NULL REFERENCES partidas(id),
+      turno INTEGER NOT NULL,
+      jogador_id INTEGER NOT NULL REFERENCES jogadores(id),
+      PRIMARY KEY (partida_id, turno, jogador_id)
+    );
     CREATE TABLE IF NOT EXISTS caixa (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
       jogador_id INTEGER NOT NULL REFERENCES jogadores(id),
@@ -152,8 +159,8 @@ export type Jogador = {
   caixa: number
   prestigio: number
   estoque: number
-  marcos_max: number
-  marcos_max_turno: number
+  marcos_max: number // número atual de marcos cumpridos
+  marcos_max_turno: number // desde que turno o jogador tem esse número (desempate)
   bloqueado_ate: number
   sinal: number
   secretas: number

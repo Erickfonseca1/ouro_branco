@@ -137,3 +137,6 @@ input.codigo { font: 400 1.6rem/1 var(--mono); letter-spacing: 0.2em; text-trans
 .campo-linha input[type="checkbox"] { width: 20px; height: 20px; }
 .personagens + .botao, .bloco .botao.contorno { width: auto; }
 .quadro .botao.contorno { width: auto; }
+
+.votar { margin-top: var(--space-md); display: grid; gap: var(--space-xs); }
+.votar .botao { width: auto; }

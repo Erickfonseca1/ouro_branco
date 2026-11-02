@@ -126,6 +126,12 @@ export function resolverDevidos(partidaId: number) {
   }
 }
 
+// Fecha o turno em aberto agora, sem mexer no calendário: o próximo prazo é o primeiro depois do prazo original.
+export function fecharAgora(partidaId: number) {
+  const p = db.prepare('SELECT * FROM partidas WHERE id = ?').get(partidaId) as Partida
+  if (p.status === 'aberto') resolverTurno(p)
+}
+
 function resolverTurno(p: Partida) {
   db.exec('BEGIN IMMEDIATE')
   try {
@@ -315,7 +321,8 @@ function resolverTurno(p: Partida) {
       const marcos = marcosDaVariante(j.variante ?? '')
       const n = marcos.filter((m) => cumprido(m, ctx)).length
       contagem.set(j.id, n)
-      if (n > j.marcos_max) {
+      // marcos_max guarda o número atual de marcos; marcos_max_turno, desde que turno o jogador o tem (desempate).
+      if (n !== j.marcos_max) {
         j.marcos_max = n
         j.marcos_max_turno = t
       }
@@ -341,6 +348,7 @@ function resolverTurno(p: Partida) {
       }
       db.prepare('UPDATE partidas SET reivindicador_id = NULL, reivindicacao_turno = NULL WHERE id = ?').run(p.id)
     } else if (!reiv) {
+      const candidatos: Linha[] = []
       for (const j of jogadores) {
         if (!ordens.get(j.id)?.reivindicar) continue
         if (t < R.TURNO_REIVINDICAR || j.bloqueado_ate >= t) {
@@ -351,27 +359,39 @@ function resolverTurno(p: Partida) {
           aviso(j.id, 'Reivindicação não aberta: os 3 marcos não estavam cumpridos no fim do turno.')
           continue
         }
-        db.prepare('UPDATE partidas SET reivindicador_id = ?, reivindicacao_turno = ? WHERE id = ?').run(j.id, t, p.id)
-        publico.push({ tipo: 'manchete', texto: `${j.nome} reivindica o título. Os demais têm um turno para derrubar a reivindicação.` })
-        break
+        candidatos.push(j)
+      }
+      // Vale quem completou os 3 marcos primeiro; se foi no mesmo turno, decide o sorteio da semente da partida.
+      const dado = new Map(candidatos.map((j) => [j.id, rng()]))
+      candidatos.sort((a, b) => a.marcos_max_turno - b.marcos_max_turno || dado.get(a.id)! - dado.get(b.id)!)
+      const [primeiro, ...demais] = candidatos
+      if (primeiro) {
+        db.prepare('UPDATE partidas SET reivindicador_id = ?, reivindicacao_turno = ? WHERE id = ?').run(primeiro.id, t, p.id)
+        publico.push({ tipo: 'manchete', texto: `${primeiro.nome} reivindica o título. Os demais têm um turno para derrubar a reivindicação.` })
+        for (const j of demais) aviso(j.id, 'Outro jogador completou os 3 marcos antes de você e reivindicou primeiro.')
       }
     }
 
-    // 10. Fim da partida.
+    // 10. Fim da partida (vitória por reivindicação ou turno 12). Sem nenhum marco, termina sem vencedor.
+    let encerrada = false
     const reivNovo = db.prepare('SELECT reivindicador_id FROM partidas WHERE id = ?').get(p.id) as { reivindicador_id: number | null }
     if (!vencedor && t >= R.TURNO_FIM) {
-      if (reivNovo.reivindicador_id) {
-        const r = reivNovo.reivindicador_id
-        if ((contagem.get(r) ?? 0) >= R.MARCOS_PARA_REIVINDICAR) vencedor = r
-      }
-      if (!vencedor) {
-        vencedor = [...jogadores].sort((a, b) => (contagem.get(b.id) ?? 0) - (contagem.get(a.id) ?? 0) || a.marcos_max_turno - b.marcos_max_turno || a.id - b.id)[0].id
+      encerrada = true
+      if (reivNovo.reivindicador_id && (contagem.get(reivNovo.reivindicador_id) ?? 0) >= R.MARCOS_PARA_REIVINDICAR) {
+        vencedor = reivNovo.reivindicador_id
+      } else {
+        const ranking = [...jogadores].sort(
+          (a, b) => (contagem.get(b.id) ?? 0) - (contagem.get(a.id) ?? 0) || a.marcos_max_turno - b.marcos_max_turno || a.id - b.id,
+        )
+        if ((contagem.get(ranking[0].id) ?? 0) > 0) vencedor = ranking[0].id
       }
     }
-    if (vencedor) {
+    if (vencedor) encerrada = true
+    if (encerrada) {
       db.prepare("UPDATE partidas SET vencedor_id = ?, status = 'fim' WHERE id = ?").run(vencedor, p.id)
-      publico.push({ tipo: 'manchete', texto: `${nomes.get(vencedor)} venceu a partida.` })
-      for (const j of jogadores) aviso(j.id, `A partida acabou: ${nomes.get(vencedor)} venceu.`)
+      const fim = vencedor ? `${nomes.get(vencedor)} venceu a partida.` : 'A partida terminou sem vencedor: ninguém cumpriu um marco.'
+      publico.push({ tipo: 'manchete', texto: fim })
+      for (const j of jogadores) aviso(j.id, `A partida acabou: ${fim}`)
     }
 
     // 11. Gravação.
@@ -388,7 +408,7 @@ function resolverTurno(p: Partida) {
       db.prepare('INSERT INTO gazeta (partida_id, turno, tipo, texto, alvo_id) VALUES (?, ?, ?, ?, ?)').run(p.id, t, g.tipo, g.texto, g.alvo ?? null)
     }
 
-    if (!vencedor) {
+    if (!encerrada) {
       const prox = proximoPrazo(new Date(p.prazo))
       db.prepare('UPDATE partidas SET turno = ?, prazo = ? WHERE id = ?').run(t + 1, prox.toISOString(), p.id)
     }

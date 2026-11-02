@@ -14,7 +14,7 @@ Você recebe um **objetivo secreto em 3 marcos**, mostrado como 3 selos de lacre
 3. **Conversar** com quem quiser, por fora do app. **Promessa não vale nada.** Só vale o **contrato registrado no app**.
 4. **Decidir:** **2 ações abertas** (todos veem), **1 ação secreta** e quanto de borracha vender.
 
-Se faltar a um turno, o sistema joga por você de forma conservadora. Alguém do grupo avisa quando a Gazeta sair.
+Se todos votarem pelo botão da Gazeta, o turno fecha na hora e o próximo abre. Se faltar a um turno, o sistema joga por você de forma conservadora. Alguém do grupo avisa quando a Gazeta sair.
 
 ## Dinheiro
 - O seringal produz se você pagar o **aviamento** antes. Quase todo mundo precisa de **crédito** para isso.

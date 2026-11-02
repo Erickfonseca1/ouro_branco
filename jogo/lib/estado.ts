@@ -4,6 +4,7 @@ import { papel } from './papeis'
 import * as R from './regras'
 import { labelMarco, marcosDaVariante, cumprido, type Contexto } from './objetivos'
 import { resolverDevidos, type Ordens } from './motor'
+import { contarVotos } from './votos'
 
 export const CORES = ['--p-ab', '--p-bg', '--p-es', '--p-am', '--p-ta', '--p-ew', '--p-ma', '--p-x'] as const
 
@@ -107,6 +108,7 @@ export function carregarEstado(jogadorId: number) {
       reivindicador,
       reivindicacaoTurno: p.reivindicacao_turno,
       historico,
+      votos: contarVotos(p.id, p.turno, eu.id),
       criador: jogadores.find((j) => j.criador)?.nome ?? '',
     },
     eu: {
@@ -159,6 +161,7 @@ export function listaParaOrdens(jogadorId: number) {
     contratosRecebidos: v.contratos.filter((c) => c.status === 'proposto' && c.recebo),
     podeReivindicar: v.eu.podeReivindicar,
     estoque: v.eu.estoque,
+    votos: v.partida.votos,
     seringais: v.eu.seringais,
     ordens: v.ordens,
     ordemEnviada: v.ordemEnviada,

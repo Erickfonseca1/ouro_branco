@@ -6,6 +6,7 @@ import { useState } from 'react'
 import type { Ordens as OrdensTipo } from '@/lib/motor'
 import { faltam, formatarPrazo } from '@/lib/tempo'
 import type { MetodoId, NpcId } from '@/lib/regras'
+import VotarTurno from '../_quadro/VotarTurno'
 
 type Dados = ReturnType<typeof import('@/lib/estado').listaParaOrdens>
 
@@ -214,6 +215,11 @@ export default function Ordens({ dados }: { dados: Dados }) {
         {ok && <p className="ajuda" role="status">{ok}</p>}
         <button type="submit" className="botao acento" disabled={enviando}>{enviando ? 'Salvando...' : dados.ordemEnviada ? 'Atualizar ordens' : 'Enviar ordens'}</button>
       </form>
+
+      <section className="bloco" aria-labelledby="vt-t">
+        <h3 id="vt-t">Adiantar o turno</h3>
+        <VotarTurno votos={dados.votos} />
+      </section>
     </main>
   )
 }

@@ -5,6 +5,7 @@ import { carregarEstado } from '@/lib/estado'
 import { faltam } from '@/lib/tempo'
 import { Quadro } from '../_quadro/Quadro'
 import Fechar from '../_quadro/Fechar'
+import VotarTurno from '../_quadro/VotarTurno'
 
 export const instant = false
 
@@ -23,8 +24,10 @@ export default async function Gazeta() {
     <Quadro v={v} ativo="gazeta">
       <section className="tela-secao" aria-labelledby="gz-t">
         <h2 id="gz-t" className="titulo">Gazeta de Manaus</h2>
-        {v.partida.status === 'fim' && v.partida.vencedor && (
-          <p className="faixa-alerta" role="status">A partida acabou. {v.partida.vencedor} venceu.</p>
+        {v.partida.status === 'fim' && (
+          <p className="faixa-alerta" role="status">
+            {v.partida.vencedor ? `A partida acabou. ${v.partida.vencedor} venceu.` : 'A partida terminou sem vencedor: ninguém cumpriu um marco.'}
+          </p>
         )}
         {v.partida.reivindicador && (
           <p className="faixa-alerta">{v.partida.reivindicador} reivindica o título. Derrube um marco até o próximo turno.</p>
@@ -55,6 +58,7 @@ export default async function Gazeta() {
             <li>Fechamento do turno {v.partida.turno} <span className="mono">{faltam(v.partida.prazo)}</span></li>
             {v.partida.reivindicador && <li>Reivindicação em curso de {v.partida.reivindicador}</li>}
           </ul>
+          <VotarTurno votos={v.partida.votos} />
         </section>
       )}
 
