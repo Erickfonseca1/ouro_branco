@@ -23,7 +23,10 @@ export default async function Rio() {
           <image href="/mapa/rio.jpg" width="690" height="1010" />
           <text className="t-cid" x="470" y="470" fontSize="30">MANAUS</text>
           {v.seringais.map((s) => {
-            const [x, y] = SLOTS_SERINGAL[s.slot] ?? [0, 0]
+            // Com mais de 10 seringais (partidas de 9 a 14), a segunda volta é desenhada deslocada.
+            const volta = Math.floor(s.slot / SLOTS_SERINGAL.length)
+            const [x0, y0] = SLOTS_SERINGAL[s.slot % SLOTS_SERINGAL.length]
+            const [x, y] = [x0 + volta * 22, y0 + volta * 22]
             return s.dono ? (
               <g key={s.slot} transform={`translate(${x} ${y}) scale(1.7)`}>
                 <rect x="-12" y="-12" width="24" height="24" rx="4" fill="var(--color-on-map)" stroke={`var(${s.cor})`} strokeWidth="3" />

@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server'
 import { db } from '@/lib/db'
 import { novoCodigo, telefone } from '@/lib/sessao'
 import { proximoPrazo } from '@/lib/tempo'
+import * as R from '@/lib/regras'
 import { randomInt } from 'node:crypto'
 
 type Participante = { nome?: string; telefone?: string; criador?: boolean }
@@ -36,13 +37,10 @@ export async function POST(req: Request) {
         .run(codigo, linhas.length, randomInt(2 ** 31), proximoPrazo().toISOString()).lastInsertRowid,
     )
     const inserir = db.prepare('INSERT INTO jogadores (partida_id, nome, telefone, criador) VALUES (?, ?, ?, ?)')
-    const donos: number[] = []
-    for (const l of linhas) donos.push(Number(inserir.run(partidaId, l.nome, l.telefone, l.criador).lastInsertRowid))
-    // Um seringal inicial por jogador, mais dois do sistema (04, seção 6).
-    const seringal = db.prepare('INSERT INTO seringais (partida_id, dono_id, slot) VALUES (?, ?, ?)')
-    donos.forEach((id, slot) => seringal.run(partidaId, id, slot))
-    seringal.run(partidaId, null, donos.length)
-    seringal.run(partidaId, null, donos.length + 1)
+    for (const l of linhas) inserir.run(partidaId, l.nome, l.telefone, l.criador)
+    // Seringais do sistema. Os dos jogadores são criados quando cada um recebe o papel (lib/sessao.ts).
+    const sistema = db.prepare('INSERT INTO seringais (partida_id, dono_id, slot) VALUES (?, NULL, ?)')
+    for (let i = 0; i < R.SERINGAIS_SISTEMA; i++) sistema.run(partidaId, i)
     db.exec('COMMIT')
   } catch (e) {
     db.exec('ROLLBACK')

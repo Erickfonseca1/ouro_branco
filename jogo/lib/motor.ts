@@ -18,7 +18,7 @@ export type Ordens = {
 }
 
 // rotulo: "Nome – Personagem", usado em todo texto da Gazeta e da caixa de entrada.
-type Linha = Jogador & { rotulo: string }
+type Linha = Jogador & { rotulo: string; credor: Linha | null }
 type Contrato = { id: number; de_id: number; para_id: number; valor: number; turnos: number; status: string; turno_proposta: number }
 
 const NPC_IDS = new Set<string>(R.NPCS.map((n) => n.id))
@@ -143,6 +143,10 @@ function resolverTurno(p: Partida) {
     for (const j of jogadores) {
       atribuirPapel(j, p)
       j.rotulo = rotuloJogador(j.nome, j.papel)
+      j.credor = null
+    }
+    for (const j of jogadores) {
+      if (j.credor_id) j.credor = jogadores.find((x) => x.id === j.credor_id) ?? null
     }
     const nomes = new Map(jogadores.map((j) => [j.id, j.rotulo]))
     const privado = new Map<number, string[]>(jogadores.map((j) => [j.id, []]))
@@ -206,19 +210,39 @@ function resolverTurno(p: Partida) {
       }
     }
 
-    // 3. Aviamento e produção.
+    // 0. Renda fixa dos papéis sem seringal (04, seção 4.8).
+    for (const j of jogadores) {
+      const renda = R.RENDA_PAPEL[j.papel ?? 0]
+      if (renda) j.caixa = cent(j.caixa + renda)
+    }
+
+    // 3. Aviamento e produção. Falta de caixa vira empréstimo: a casa aviadora jogadora empresta o que tem;
+    // o resto vem da casa automática, com juros mais altos.
+    const aviadora = jogadores.find((j) => j.papel === R.PAPEL_AVIADORA) ?? null
     for (const j of jogadores) {
       if (!ordens.get(j.id)?.aviar) continue
-      const custo = R.aviamento(t)
       const n = donosDe(j.id)
-      let aviados = 0
-      for (let i = 0; i < n && j.caixa >= custo; i++) {
-        j.caixa = cent(j.caixa - custo)
-        aviados++
+      if (!n) continue
+      const custo = cent(n * R.aviamento(t))
+      const falta = cent(Math.max(0, custo - j.caixa))
+      if (falta > 0) {
+        const doAviadora = aviadora && aviadora.id !== j.id ? cent(Math.min(falta, Math.max(0, aviadora.caixa))) : 0
+        const doAuto = cent(falta - doAviadora)
+        if (doAviadora > 0) {
+          aviadora!.caixa = cent(aviadora!.caixa - doAviadora)
+          aviso(aviadora!.id, `Emprestou ${doAviadora}₵ para o aviamento de ${j.rotulo}.`)
+        }
+        j.divida = cent(j.divida + falta)
+        // Uma taxa só por devedor: a mais alta entre os empréstimos. Havendo parte automática, o credor é a casa automática.
+        const taxa = doAuto > 0 ? R.JUROS_AUTOMATICA : R.JUROS_AVIADORA
+        j.taxa_divida = Math.max(j.taxa_divida, taxa)
+        j.credor = doAuto > 0 ? null : aviadora
+        j.caixa = cent(j.caixa + falta)
+        aviso(j.id, `Pegou ${falta}₵ emprestados para o aviamento (dívida total: ${j.divida}₵).`)
       }
-      j.estoque += aviados * R.PRODUCAO_POR_SERINGAL
-      if (aviados < n) aviso(j.id, `Aviamento parcial: ${aviados} de ${n} seringais produziram.`)
-      else if (n > 0) aviso(j.id, `${aviados} seringais aviados, ${aviados * R.PRODUCAO_POR_SERINGAL} lotes produzidos.`)
+      j.caixa = cent(j.caixa - custo)
+      j.estoque += n * R.PRODUCAO_POR_SERINGAL
+      aviso(j.id, `${n} ${n === 1 ? 'seringal aviado' : 'seringais aviados'}, ${n * R.PRODUCAO_POR_SERINGAL} lotes produzidos.`)
     }
 
     // 4. Vendas e preço (dilema do cartel).
@@ -244,15 +268,26 @@ function resolverTurno(p: Partida) {
     if (germinou && t >= 11) pBase *= 0.4
     else if (germinou && t >= 9) pBase *= 0.65
     pBase = Math.max(1.5, pBase)
-    const bruto = pBase - 0.25 * (volume - demanda)
+    // Os seringais do sistema também vendem: sua oferta pesa no preço, mas não paga ninguém (economia.py).
+    const ofertaSistema = Math.round(R.SERINGAIS_SISTEMA * R.PRODUCAO_POR_SERINGAL * R.SISTEMA_VENDE)
+    const ofertaTotal = volume + ofertaSistema
+    const bruto = pBase - 0.25 * (ofertaTotal - demanda)
     const preco = Math.round(Math.min(pBase + 2, Math.max(1, bruto)) * 4) / 4
 
+    // O frete é pago ao armador até a capacidade dos vapores; o resto do frete some (ninguém o recebe).
+    const armador = jogadores.find((j) => j.papel === R.PAPEL_ARMADOR) ?? null
+    let capacidadeArmador = armador ? R.ARMADOR_CAPACIDADE : 0
     for (const j of jogadores) {
       const v = vendas.get(j.id)
       if (!v) continue
       const taxa = v.canal === 'exportador' ? R.PRECO_EXPORTADOR : R.PRECO_CASA
       const bruto = Math.round(v.q * preco * taxa * 100) / 100
       const custoFrete = Math.round(v.q * R.frete(preco) * 100) / 100
+      const noArmador = Math.min(v.q, capacidadeArmador)
+      capacidadeArmador -= noArmador
+      if (armador && noArmador > 0 && armador.id !== j.id) {
+        armador.caixa = cent(armador.caixa + Math.round(noArmador * R.frete(preco) * 100) / 100)
+      }
       const recebido = Math.round((bruto - custoFrete) * 100) / 100
       j.caixa = cent(j.caixa + recebido)
       j.estoque -= v.q
@@ -261,7 +296,7 @@ function resolverTurno(p: Partida) {
     for (const j of jogadores) {
       j.estoque = Math.floor(j.estoque * R.LOTE_PARADO)
     }
-    db.prepare('INSERT INTO historico (partida_id, turno, preco, vendido, demanda) VALUES (?, ?, ?, ?, ?)').run(p.id, t, preco, volume, demanda)
+    db.prepare('INSERT INTO historico (partida_id, turno, preco, vendido, demanda) VALUES (?, ?, ?, ?, ?)').run(p.id, t, preco, ofertaTotal, demanda)
     publico.push({ tipo: 'manchete', texto: `Borracha a ${preco.toFixed(2).replace('.', ',')}₵ o lote no fim do turno ${t}.` })
 
     // 5. Ações abertas (até 2) e secreta (até 1). Secretas por prestígio crescente.
@@ -275,6 +310,26 @@ function resolverTurno(p: Partida) {
     for (const j of secretas) {
       const s = ordens.get(j.id)?.secreta
       if (s) executarSecreta(p, j, s, jogadores, rng, publico, aviso, t, preco)
+    }
+
+    // 5b. Juros e amortização das dívidas de aviamento. Juros não pagos viram dívida.
+    for (const j of jogadores) {
+      if (j.divida <= 0) continue
+      const juros = cent(j.divida * j.taxa_divida)
+      const pagoJuros = cent(Math.min(juros, Math.max(0, j.caixa)))
+      j.caixa = cent(j.caixa - pagoJuros)
+      j.divida = cent(j.divida + (juros - pagoJuros))
+      if (j.credor && pagoJuros > 0) j.credor.caixa = cent(j.credor.caixa + pagoJuros)
+      const pagar = cent(Math.min(j.divida, Math.max(0, j.caixa - 2)))
+      j.caixa = cent(j.caixa - pagar)
+      j.divida = cent(j.divida - pagar)
+      if (j.credor && pagar > 0) j.credor.caixa = cent(j.credor.caixa + pagar)
+      if (j.divida < 0.01) {
+        j.divida = 0
+        j.taxa_divida = 0
+        j.credor = null
+      }
+      aviso(j.id, j.divida > 0 ? `Dívida: ${j.divida}₵ a ${Math.round(j.taxa_divida * 100)}% por turno.` : 'Dívida quitada.')
     }
 
     // 6. Luxo (conta de posição).
@@ -402,8 +457,8 @@ function resolverTurno(p: Partida) {
     // 11. Gravação.
     for (const j of jogadores) {
       db.prepare(
-        'UPDATE jogadores SET caixa = ?, prestigio = ?, estoque = ?, marcos_max = ?, marcos_max_turno = ?, bloqueado_ate = ?, sinal = ?, secretas = ? WHERE id = ?',
-      ).run(j.caixa, j.prestigio, j.estoque, j.marcos_max, j.marcos_max_turno, j.bloqueado_ate, j.sinal, j.secretas, j.id)
+        'UPDATE jogadores SET caixa = ?, prestigio = ?, estoque = ?, marcos_max = ?, marcos_max_turno = ?, bloqueado_ate = ?, sinal = ?, secretas = ?, divida = ?, taxa_divida = ?, credor_id = ? WHERE id = ?',
+      ).run(j.caixa, j.prestigio, j.estoque, j.marcos_max, j.marcos_max_turno, j.bloqueado_ate, j.sinal, j.secretas, j.divida, j.taxa_divida, j.credor?.id ?? null, j.id)
       const linhas = privado.get(j.id) ?? []
       linhas.unshift(`Turno ${t}: ${contagem.get(j.id) ?? 0} de 3 marcos cumpridos. Caixa ${j.caixa.toFixed(2).replace('.', ',')}₵.`)
       for (const texto of linhas) db.prepare('INSERT INTO caixa (jogador_id, texto) VALUES (?, ?)').run(j.id, texto)

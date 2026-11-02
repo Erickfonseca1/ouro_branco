@@ -12,6 +12,29 @@ export function aviamento(turno: number) {
   return turno <= 3 ? 4 : turno <= 7 ? 5 : 6
 }
 
+// Valores por papel do piloto (chave: id do papel em papeis.ts). Vêm de simulador/economia.py, PAPEIS e renda_fixa.
+// Papéis fora do piloto (9 a 14) usam os valores de marcos.json, com o mesmo piso de caixa.
+export const CAIXA_PAPEL: Record<number, number> = { 1: 12, 2: 30, 3: 20, 4: 14, 5: 10, 6: 10, 7: 8, 8: 8 }
+export const SERINGAIS_PAPEL: Record<number, number> = { 1: 2, 2: 0, 3: 1, 4: 0, 5: 1, 6: 0, 7: 1, 8: 0 }
+export const SERINGAIS_PADRAO = 1 // papéis fora do piloto
+export const SERINGAIS_SISTEMA = 4 // seringais do sistema, sempre presentes (economia.py)
+export const SISTEMA_VENDE = 0.66 // fração da produção dos seringais do sistema que entra no mercado (economia.py)
+export const RENDA_PAPEL: Record<number, number> = { 5: 2, 6: 4, 8: 3 } // Governador, Dono do jornal, Naturalista (04, seção 4.8)
+
+// Crédito de aviamento: a casa aviadora jogadora empresta o que tem; o resto vem da casa automática.
+export const JUROS_AVIADORA = 0.2
+export const JUROS_AUTOMATICA = 0.25
+export const PAPEL_AVIADORA = 2
+export const PAPEL_ARMADOR = 4
+// Frete vai para o armador até a capacidade dos dois vapores (2 × 6 lotes por turno, economia.py).
+export const ARMADOR_CAPACIDADE = 12
+
+// Caixa mínimo ao começar: o suficiente para pagar o aviamento de 2 seringais no turno 1.
+// Abaixo disso, um papel nunca produz (não há crédito no motor) e fica fora do jogo.
+// Calibrado com a simulação em simulador/economia.py (ver resultados): com caixa 3, Caudilho e Naturalista
+// ficavam sem produzir em todas as partidas.
+export const CAIXA_INICIAL_MINIMA = 2 * 4
+
 export const PRODUCAO_POR_SERINGAL = 3
 export const DEMANDA_POR_SERINGAL = 2
 export const CAPACIDADE_EXPORTADOR = 8

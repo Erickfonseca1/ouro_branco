@@ -230,7 +230,7 @@ export default function Ordens({ dados }: { dados: Dados }) {
           <legend><span className="etapa-num">1</span>Economia</legend>
           <label className="interruptor">
             <input type="checkbox" checked={aviar} onChange={(e) => setAviar(e.target.checked)} />
-            <span>Pagar o aviamento: {dados.seringais} {dados.seringais === 1 ? 'seringal' : 'seringais'} × {dados.aviamento}₵, produz {dados.seringais * R.PRODUCAO_POR_SERINGAL} lotes</span>
+            <span>Pagar o aviamento: {dados.seringais} {dados.seringais === 1 ? 'seringal' : 'seringais'} × {dados.aviamento}₵, produz {dados.seringais * R.PRODUCAO_POR_SERINGAL} lotes. Se faltar caixa, a casa aviadora ou a automática empresta, com juros.</span>
           </label>
 
           <p className="rotulo-campo" id="venda-rot">Quantos lotes vender</p>

@@ -30,7 +30,7 @@ export default async function Bolsa() {
       </div>
       <dl className="stats">
         <div><dt>Demanda</dt><dd className="mono">{v.partida.demanda} lotes</dd></div>
-        <div><dt>Vendido no último turno</dt><dd className="mono">{ultimo?.vendido ?? 0} lotes</dd></div>
+        <div><dt>Vendido no mercado (inclui o sistema)</dt><dd className="mono">{ultimo?.vendido ?? 0} lotes</dd></div>
         <div><dt>Seu caixa</dt><dd className="mono">{preco(v.eu.caixa)}</dd></div>
         <div><dt>Seu estoque</dt><dd className="mono">{v.eu.estoque} lotes</dd></div>
       </dl>

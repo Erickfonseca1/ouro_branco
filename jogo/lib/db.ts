@@ -47,6 +47,9 @@ function abrir(): DatabaseSync {
       bloqueado_ate INTEGER NOT NULL DEFAULT 0,
       sinal INTEGER NOT NULL DEFAULT 0,
       secretas INTEGER NOT NULL DEFAULT 0,
+      divida REAL NOT NULL DEFAULT 0,
+      taxa_divida REAL NOT NULL DEFAULT 0,
+      credor_id INTEGER,
       UNIQUE (partida_id, telefone)
     );
     CREATE TABLE IF NOT EXISTS seringais (
@@ -169,6 +172,9 @@ export type Jogador = {
   bloqueado_ate: number
   sinal: number
   secretas: number
+  divida: number
+  taxa_divida: number
+  credor_id: number | null
 }
 
 export type Mensagem = { id: number; texto: string; lida: number; criada_em: string }

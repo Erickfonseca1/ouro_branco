@@ -1,5 +1,6 @@
 # Ouro Branco: Regras e Jogabilidade
 
+> Valores do modo piloto (seção 8) calibrados com [simulador/economia.py](simulador/economia.py): caixa e seringais por papel, renda fixa, crédito de aviamento, frete ao armador e oferta do sistema.
 > Documento de regras do sistema: como se vence, como é um turno, como funciona a economia e o que mantém o jogo vivo entre os turnos.
 > Ambientação em [01-historia-base.md](01-historia-base.md) · Personagens em [02-personagens-e-relacoes.md](02-personagens-e-relacoes.md) (**contém spoilers**) · Interações em [03-mapa-de-interacao.md](03-mapa-de-interacao.md) · Visual em [05-identidade-visual.md](05-identidade-visual.md)
 

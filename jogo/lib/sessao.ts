@@ -2,6 +2,7 @@ import { cookies } from 'next/headers'
 import { randomBytes, randomInt } from 'node:crypto'
 import { db, type Jogador, type Partida } from './db'
 import { PAPEIS } from './papeis'
+import * as R from './regras'
 import { ECONOMIA_PAPEL, CHAVE_PAPEL, variantesDoPapel } from './objetivos'
 
 export const COOKIE = 'ouro_sessao'
@@ -32,24 +33,32 @@ function sortearPapel(partidaId: number, tamanho: number): number {
 }
 
 // Sorteia papel, variante e estado inicial de quem ainda não tem papel. Chamar dentro de transação.
+// Atualiza também o objeto recebido, para quem chama usar o caixa e o prestígio certos.
 export function atribuirPapel(jogador: Jogador, partida: Pick<Partida, 'id' | 'tamanho'>) {
   if (jogador.papel !== null) return
   const papel = sortearPapel(partida.id, partida.tamanho)
   const variantes = variantesDoPapel(papel)
   const variante = variantes[randomInt(variantes.length)].id
   const economia = ECONOMIA_PAPEL[CHAVE_PAPEL[papel]] ?? { caixa: 4, prestigio: 2, renda: 0 }
-  db.prepare('UPDATE jogadores SET papel = ?, variante = ?, caixa = ?, prestigio = ? WHERE id = ?').run(
-    papel,
-    variante,
-    economia.caixa,
-    economia.prestigio,
-    jogador.id,
-  )
+  const caixa = R.CAIXA_PAPEL[papel] ?? Math.max(economia.caixa, R.CAIXA_INICIAL_MINIMA)
+  const prestigio = economia.prestigio
+  db.prepare('UPDATE jogadores SET papel = ?, variante = ?, caixa = ?, prestigio = ? WHERE id = ?').run(papel, variante, caixa, prestigio, jogador.id)
+
+  // Seringais do papel (economia.py). Os slots seguem os que já existem na partida.
+  const existentes = (db.prepare('SELECT COUNT(*) AS n FROM seringais WHERE partida_id = ?').get(partida.id) as { n: number }).n
+  const qtd = R.SERINGAIS_PAPEL[papel] ?? R.SERINGAIS_PADRAO
+  const inserir = db.prepare('INSERT INTO seringais (partida_id, dono_id, slot) VALUES (?, ?, ?)')
+  for (let i = 0; i < qtd; i++) inserir.run(partida.id, jogador.id, existentes + i)
+
   db.prepare('INSERT INTO caixa (jogador_id, texto) VALUES (?, ?)').run(
     jogador.id,
-    'Você entrou na partida. Seu personagem foi sorteado; leia o guia antes do primeiro turno.',
+    qtd > 0
+      ? `Seu personagem foi sorteado. Você começa com ${qtd} ${qtd === 1 ? 'seringal' : 'seringais'} e ${caixa}₵ em caixa.`
+      : `Seu personagem foi sorteado. Você começa com ${caixa}₵ em caixa e sem seringal próprio.`,
   )
   jogador.papel = papel
+  jogador.caixa = caixa
+  jogador.prestigio = prestigio
 }
 
 // Primeiro acesso: sorteia o personagem e cria o token da sessão. Idempotente.
