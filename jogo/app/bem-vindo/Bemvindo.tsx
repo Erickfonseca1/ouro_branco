@@ -59,6 +59,7 @@ export default function Bemvindo({ personagem }: { personagem: Personagem }) {
           <>
             <h2>Caixa de entrada</h2>
             <p>Os avisos da partida chegam só aqui. Não há notificação no celular: abra o app para ver o que mudou.</p>
+            <p>Em cada tela, o botão ? explica o que acontece ali. Nos primeiros turnos, a Gazeta traz um tutorial do que fazer.</p>
           </>
         ) : (
           <>

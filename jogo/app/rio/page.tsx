@@ -4,6 +4,7 @@ import { jogadorAtual } from '@/lib/sessao'
 import { carregarEstado } from '@/lib/estado'
 import { SLOTS_SERINGAL } from '@/lib/regras'
 import { Quadro } from '../_quadro/Quadro'
+import { QuemEQuem } from '../_quadro/QuemEQuem'
 
 export const instant = false
 
@@ -40,6 +41,8 @@ export default async function Rio() {
         <li>Seringal com dono</li>
         <li>Pontilhado: do sistema</li>
       </ul>
+
+      <QuemEQuem jogadores={v.jogadores} titulo="Donos dos seringais" />
 
       <section className="bloco">
         <h3>Seu seringal</h3>

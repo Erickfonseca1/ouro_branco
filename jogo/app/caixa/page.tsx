@@ -4,6 +4,8 @@ import { db, type Mensagem } from '@/lib/db'
 import { jogadorAtual } from '@/lib/sessao'
 import { papel } from '@/lib/papeis'
 import MarcarLidas from './MarcarLidas'
+import Ajuda from '../_quadro/Ajuda'
+import Link from 'next/link'
 
 function quando(utc: string) {
   return new Date(utc.replace(' ', 'T') + 'Z').toLocaleString('pt-BR', {
@@ -30,7 +32,10 @@ export default async function Caixa() {
 
   return (
     <main className="tela">
-      <header className="topo"><span>Partida {jogador.codigo}</span><span>{personagem?.papel}</span></header>
+      <header className="topo">
+        <Link href="/gazeta" className="marca">Ouro Branco</Link>
+        <span className="topo-acoes"><span className="mono">{personagem?.papel}</span><Ajuda pagina="caixa" /></span>
+      </header>
       <h1 className="titulo">Caixa de entrada</h1>
 
       {mensagens.length === 0 ? (

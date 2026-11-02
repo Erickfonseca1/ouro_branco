@@ -1,6 +1,8 @@
 import Link from 'next/link'
 import { formatarPrazo, faltam } from '@/lib/tempo'
 import type { Visao } from '@/lib/estado'
+import type { Pagina } from '@/lib/ajuda'
+import Ajuda from './Ajuda'
 
 const ABAS = [
   { href: '/gazeta', nome: 'Gazeta' },
@@ -25,12 +27,13 @@ export function Quadro({ v, ativo, children }: { v: Visao; ativo: string; childr
           <Link href="/caixa" className="caixa-icone" aria-label={`Caixa de entrada, ${eu.naoLidas} não lidas`}>
             Caixa{eu.naoLidas > 0 && <span className="pend">{eu.naoLidas}</span>}
           </Link>
+          <Ajuda pagina={ativo as Pagina} />
         </nav>
       </header>
 
       <div className="barra-turno">
         <span>Turno {partida.turno}, {anoDoTurno(partida.turno)}</span>
-        <span>{eu.nome}</span>
+        <span className="quem-sou">{eu.rotulo}</span>
         <span className="prazo">
           {partida.status === 'aberto' ? `Fecha ${formatarPrazo(partida.prazo)}, ${faltam(partida.prazo)}` : 'Partida encerrada'}
         </span>

@@ -117,6 +117,11 @@ function abrir(): DatabaseSync {
       jogador_id INTEGER NOT NULL REFERENCES jogadores(id),
       PRIMARY KEY (partida_id, turno, jogador_id)
     );
+    CREATE TABLE IF NOT EXISTS dicas (
+      jogador_id INTEGER NOT NULL REFERENCES jogadores(id),
+      chave TEXT NOT NULL,
+      PRIMARY KEY (jogador_id, chave)
+    );
     CREATE TABLE IF NOT EXISTS caixa (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
       jogador_id INTEGER NOT NULL REFERENCES jogadores(id),

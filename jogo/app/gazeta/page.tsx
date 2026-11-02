@@ -6,6 +6,9 @@ import { faltam } from '@/lib/tempo'
 import { Quadro } from '../_quadro/Quadro'
 import Fechar from '../_quadro/Fechar'
 import VotarTurno from '../_quadro/VotarTurno'
+import TutorialTurno from '../_quadro/TutorialTurno'
+import Dica from '../_quadro/Dica'
+import { ULTIMO_TURNO_TUTORIAL } from '@/lib/ajuda'
 
 export const instant = false
 
@@ -22,6 +25,9 @@ export default async function Gazeta() {
 
   return (
     <Quadro v={v} ativo="gazeta">
+      {v.partida.status === 'aberto' && v.partida.turno <= ULTIMO_TURNO_TUTORIAL && (
+        <TutorialTurno turno={v.partida.turno} visto={v.dicasVistas.includes(`tutorial-${v.partida.turno}`)} />
+      )}
       <section className="tela-secao" aria-labelledby="gz-t">
         <h2 id="gz-t" className="titulo">Gazeta de Manaus</h2>
         {v.partida.status === 'fim' && (
@@ -58,6 +64,7 @@ export default async function Gazeta() {
             <li>Fechamento do turno {v.partida.turno} <span className="mono">{faltam(v.partida.prazo)}</span></li>
             {v.partida.reivindicador && <li>Reivindicação em curso de {v.partida.reivindicador}</li>}
           </ul>
+          <Dica chave="votar" vistas={v.dicasVistas} />
           <VotarTurno votos={v.partida.votos} />
         </section>
       )}

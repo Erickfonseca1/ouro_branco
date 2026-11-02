@@ -3,6 +3,7 @@ import { db, type Jogador, type Partida } from './db'
 import * as R from './regras'
 import { BIFURCACOES, cumprido, marcosDaVariante, type Contexto } from './objetivos'
 import { atribuirPapel } from './sessao'
+import { rotuloJogador } from './papeis'
 import { proximoPrazo } from './tempo'
 
 type Abertura = { tipo: R.AbertaId; alvo?: number | R.NpcId; metodo?: R.MetodoId }
@@ -16,7 +17,8 @@ export type Ordens = {
   reivindicar?: boolean
 }
 
-type Linha = Jogador
+// rotulo: "Nome – Personagem", usado em todo texto da Gazeta e da caixa de entrada.
+type Linha = Jogador & { rotulo: string }
 type Contrato = { id: number; de_id: number; para_id: number; valor: number; turnos: number; status: string; turno_proposta: number }
 
 const NPC_IDS = new Set<string>(R.NPCS.map((n) => n.id))
@@ -138,8 +140,11 @@ function resolverTurno(p: Partida) {
     const t = p.turno
     const rng = R.sementeRng(p.semente + t * 7919)
     const jogadores = db.prepare('SELECT * FROM jogadores WHERE partida_id = ? ORDER BY id').all(p.id) as Linha[]
-    for (const j of jogadores) atribuirPapel(j, p)
-    const nomes = new Map(jogadores.map((j) => [j.id, j.nome]))
+    for (const j of jogadores) {
+      atribuirPapel(j, p)
+      j.rotulo = rotuloJogador(j.nome, j.papel)
+    }
+    const nomes = new Map(jogadores.map((j) => [j.id, j.rotulo]))
     const privado = new Map<number, string[]>(jogadores.map((j) => [j.id, []]))
     const aviso = (id: number, texto: string) => privado.get(id)?.push(texto)
     const publico: { tipo: string; texto: string; alvo?: number }[] = []
@@ -165,13 +170,13 @@ function resolverTurno(p: Partida) {
         para.caixa = cent(para.caixa + c.valor)
         const restam = c.turnos - 1
         db.prepare('UPDATE contratos SET turnos = ?, status = ? WHERE id = ?').run(restam, restam > 0 ? 'ativo' : 'encerrado', c.id)
-        aviso(de.id, `Contrato com ${para.nome} pago: ${c.valor}₵.`)
-        aviso(para.id, `${de.nome} pagou ${c.valor}₵ pelo contrato.`)
+        aviso(de.id, `Contrato com ${para.rotulo} pago: ${c.valor}₵.`)
+        aviso(para.id, `${de.rotulo} pagou ${c.valor}₵ pelo contrato.`)
       } else {
         db.prepare("UPDATE contratos SET status = 'quebrado' WHERE id = ?").run(c.id)
         de.prestigio = Math.max(0, de.prestigio - 1)
-        aviso(de.id, `Você não pagou o contrato com ${para.nome}. Perdeu 1★.`)
-        aviso(para.id, `${de.nome} quebrou um contrato com você.`)
+        aviso(de.id, `Você não pagou o contrato com ${para.rotulo}. Perdeu 1★.`)
+        aviso(para.id, `${de.rotulo} quebrou um contrato com você.`)
         publico.push({ tipo: 'nota', texto: `Um contrato foi quebrado no porto.` })
       }
     }
@@ -197,7 +202,7 @@ function resolverTurno(p: Partida) {
         db.prepare('INSERT INTO contratos (partida_id, de_id, para_id, valor, turnos, status, turno_proposta) VALUES (?, ?, ?, ?, ?, ?, ?)').run(
           p.id, j.id, pr.alvo, pr.valor, R.PROPOSTA_TURNOS, 'proposto', t,
         )
-        aviso(pr.alvo, `${j.nome} propôs um contrato de ${pr.valor}₵ por turno. Responda nas ordens.`)
+        aviso(pr.alvo, `${j.rotulo} propôs um contrato de ${pr.valor}₵ por turno. Responda nas ordens.`)
       }
     }
 
@@ -341,7 +346,7 @@ function resolverTurno(p: Partida) {
       if (caiu) {
         r.prestigio = Math.max(0, r.prestigio - 1)
         r.bloqueado_ate = t + 1
-        publico.push({ tipo: 'manchete', texto: `A reivindicação de ${r.nome} caiu. A partida segue.` })
+        publico.push({ tipo: 'manchete', texto: `A reivindicação de ${r.rotulo} caiu. A partida segue.` })
         aviso(r.id, 'Sua reivindicação caiu. Perdeu 1★ e não pode reivindicar no próximo turno.')
       } else {
         vencedor = reiv
@@ -367,7 +372,7 @@ function resolverTurno(p: Partida) {
       const [primeiro, ...demais] = candidatos
       if (primeiro) {
         db.prepare('UPDATE partidas SET reivindicador_id = ?, reivindicacao_turno = ? WHERE id = ?').run(primeiro.id, t, p.id)
-        publico.push({ tipo: 'manchete', texto: `${primeiro.nome} reivindica o título. Os demais têm um turno para derrubar a reivindicação.` })
+        publico.push({ tipo: 'manchete', texto: `${primeiro.rotulo} reivindica o título. Os demais têm um turno para derrubar a reivindicação.` })
         for (const j of demais) aviso(j.id, 'Outro jogador completou os 3 marcos antes de você e reivindicou primeiro.')
       }
     }
@@ -462,14 +467,14 @@ function executarAberta(
     const novo = Math.max(0, Math.min(5, (rel?.valor ?? 0) + m.relacao))
     db.prepare('INSERT INTO relacoes (jogador_id, npc, valor) VALUES (?, ?, ?) ON CONFLICT(jogador_id, npc) DO UPDATE SET valor = excluded.valor').run(j.id, npc.id, novo)
     const outros = jogadores.filter((x) => x.id !== j.id)
-    publico.push({ tipo: 'registro', texto: `${j.nome} visitou ${npc.nome}.`, alvo: j.id })
+    publico.push({ tipo: 'registro', texto: `${j.rotulo} visitou ${npc.nome}.`, alvo: j.id })
     if (resultado === 0) return aviso(j.id, `${npc.nome}: nada de útil.`)
     const alvo = outros[Math.floor(rng() * outros.length)]
     const nivel = R.NIVEIS[resultado - 1]
     db.prepare('INSERT INTO pistas (partida_id, jogador_id, alvo_id, nivel, fonte, turno) VALUES (?, ?, ?, ?, ?, ?)').run(
       p.id, j.id, alvo.id, nivel, npc.nome, t,
     )
-    aviso(j.id, `${npc.nome} deixou uma pista (${nivel}) sobre ${alvo.nome}.`)
+    aviso(j.id, `${npc.nome} deixou uma pista (${nivel}) sobre ${alvo.rotulo}.`)
   }
   if (a.tipo === 'denunciar' && typeof a.alvo === 'number') {
     const prova = db
@@ -480,8 +485,8 @@ function executarAberta(
     const alvo = jogadores.find((x) => x.id === a.alvo)!
     alvo.prestigio = Math.max(0, alvo.prestigio - 2)
     denunciados.add(alvo.id)
-    publico.push({ tipo: 'manchete', texto: `Denúncia com prova no Cartório contra ${alvo.nome}.`, alvo: alvo.id })
-    aviso(j.id, `Denúncia enviada contra ${alvo.nome}.`)
+    publico.push({ tipo: 'manchete', texto: `Denúncia com prova no Cartório contra ${alvo.rotulo}.`, alvo: alvo.id })
+    aviso(j.id, `Denúncia enviada contra ${alvo.rotulo}.`)
   }
 }
 
@@ -496,7 +501,7 @@ function executarSecreta(
   t: number,
   preco: number,
 ) {
-  const custo = { subornar: 3, plantar_boato: 1, comprar_silencio: 3, espionar: 1, contrabandear: 0 }[s.tipo]
+  const custo = R.CUSTO_SECRETA[s.tipo]
   if (j.caixa < custo) return aviso(j.id, 'Sem caixa para a ação secreta.')
   j.caixa = cent(j.caixa - custo)
   j.secretas += 1
@@ -515,9 +520,9 @@ function executarSecreta(
   }
   if (s.tipo === 'plantar_boato' && typeof s.alvo === 'number') {
     const alvo = jogadores.find((x) => x.id === s.alvo)!
-    publico.push({ tipo: 'boato', texto: `Corre um boato sobre ${alvo.nome}.`, alvo: alvo.id })
+    publico.push({ tipo: 'boato', texto: `Corre um boato sobre ${alvo.rotulo}.`, alvo: alvo.id })
     if (rng() < 0.5) alvo.prestigio = Math.max(0, alvo.prestigio - 1)
-    aviso(j.id, `Boato plantado sobre ${alvo.nome}.`)
+    aviso(j.id, `Boato plantado sobre ${alvo.rotulo}.`)
   }
   if (s.tipo === 'comprar_silencio') {
     const ultimo = db
@@ -531,7 +536,7 @@ function executarSecreta(
       .prepare("SELECT texto FROM gazeta WHERE partida_id = ? AND tipo = 'registro' AND alvo_id = ? AND turno <= ? ORDER BY id DESC LIMIT 1")
       .get(p.id, s.alvo, t) as { texto: string } | undefined
     const alvo = jogadores.find((x) => x.id === s.alvo)!
-    if (!visita) return aviso(j.id, `Telégrafo: nada sobre ${alvo.nome}.`)
+    if (!visita) return aviso(j.id, `Telégrafo: nada sobre ${alvo.rotulo}.`)
     db.prepare("INSERT INTO pistas (partida_id, jogador_id, alvo_id, nivel, fonte, turno) VALUES (?, ?, ?, 'indicio', 'Telégrafo', ?)").run(
       p.id, j.id, alvo.id, t,
     )

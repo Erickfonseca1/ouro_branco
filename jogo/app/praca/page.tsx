@@ -4,6 +4,7 @@ import Link from 'next/link'
 import { jogadorAtual } from '@/lib/sessao'
 import { carregarEstado } from '@/lib/estado'
 import { Quadro } from '../_quadro/Quadro'
+import { QuemEQuem } from '../_quadro/QuemEQuem'
 
 export const instant = false
 
@@ -25,6 +26,8 @@ export default async function Praca() {
           {v.registros.map((r, i) => <li key={i}>{r}</li>)}
         </ul>
       )}
+
+      <QuemEQuem jogadores={v.jogadores} />
 
       <section className="bloco" aria-labelledby="np-t">
         <h3 id="np-t">Personagens em cena</h3>

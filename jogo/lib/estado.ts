@@ -1,6 +1,6 @@
 // SERVER ONLY. Monta o que cada jogador pode ver. Nada de marcos de outros jogadores aqui.
 import { db, type Jogador, type Partida } from './db'
-import { papel } from './papeis'
+import { papel, rotuloJogador } from './papeis'
 import * as R from './regras'
 import { labelMarco, marcosDaVariante, cumprido, type Contexto } from './objetivos'
 import { resolverDevidos, type Ordens } from './motor'
@@ -80,6 +80,8 @@ export function carregarEstado(jogadorId: number) {
     )
     .all(p.id, eu.id, eu.id) as { id: number; de_id: number; para_id: number; valor: number; turnos: number; status: string; turno_proposta: number }[]
   const nomePor = new Map(jogadores.map((j) => [j.id, j.nome]))
+  // "Nome – Personagem" em tudo que o jogador lê, para lembrar quem joga com quem.
+  const rotuloPor = new Map(jogadores.map((j) => [j.id, rotuloJogador(j.nome, j.papel)]))
 
   const relacoes = db.prepare('SELECT npc, valor FROM relacoes WHERE jogador_id = ?').all(eu.id) as { npc: string; valor: number }[]
   const pistas = db
@@ -90,9 +92,10 @@ export function carregarEstado(jogadorId: number) {
     | { payload: string }
     | undefined
   const naoLidas = (db.prepare('SELECT COUNT(*) AS n FROM caixa WHERE jogador_id = ? AND lida = 0').get(eu.id) as { n: number }).n
+  const dicasVistas = (db.prepare('SELECT chave FROM dicas WHERE jogador_id = ?').all(eu.id) as { chave: string }[]).map((d) => d.chave)
 
-  const reivindicador = p.reivindicador_id ? nomePor.get(p.reivindicador_id) ?? null : null
-  const vencedor = p.vencedor_id ? nomePor.get(p.vencedor_id) ?? null : null
+  const reivindicador = p.reivindicador_id ? rotuloPor.get(p.reivindicador_id) ?? null : null
+  const vencedor = p.vencedor_id ? rotuloPor.get(p.vencedor_id) ?? null : null
   const podeReivindicar = !p.reivindicador_id && p.turno >= R.TURNO_REIVINDICAR && eu.bloqueado_ate < p.turno && marcos.every((m) => m.cumprido)
 
   return {
@@ -114,6 +117,7 @@ export function carregarEstado(jogadorId: number) {
     eu: {
       id: eu.id,
       nome: eu.nome,
+      rotulo: rotuloPor.get(eu.id)!,
       papel: papel(eu.papel),
       cor: cor.get(eu.id)!,
       caixa: eu.caixa,
@@ -130,6 +134,8 @@ export function carregarEstado(jogadorId: number) {
     jogadores: jogadores.map((j) => ({
       id: j.id,
       nome: j.nome,
+      rotulo: rotuloPor.get(j.id)!,
+      personagem: papel(j.papel),
       iniciais: iniciais(j.nome),
       cor: cor.get(j.id)!,
       eu: j.id === eu.id,
@@ -139,14 +145,15 @@ export function carregarEstado(jogadorId: number) {
     registros,
     contratos: contratos.map((c) => ({
       ...c,
-      deNome: nomePor.get(c.de_id),
-      paraNome: nomePor.get(c.para_id),
+      deNome: rotuloPor.get(c.de_id),
+      paraNome: rotuloPor.get(c.para_id),
       recebo: c.para_id === eu.id,
     })),
     relacoes: R.NPCS.map((n) => ({ ...n, valor: relacoes.find((r) => r.npc === n.id)?.valor ?? 0 })),
-    pistas: pistas.map((k) => ({ ...k, alvoNome: nomePor.get(k.alvo_id) })),
+    pistas: pistas.map((k) => ({ ...k, alvoNome: rotuloPor.get(k.alvo_id) })),
     ordens: ordemAtual ? (JSON.parse(ordemAtual.payload) as Ordens) : null,
     ordemEnviada: !!ordemAtual,
+    dicasVistas,
   }
 }
 
@@ -155,13 +162,20 @@ export function listaParaOrdens(jogadorId: number) {
   return {
     turno: v.partida.turno,
     prazo: v.partida.prazo,
-    jogadores: v.jogadores.filter((j) => !j.eu).map((j) => ({ id: j.id, nome: j.nome })),
+    jogadores: v.jogadores.filter((j) => !j.eu).map((j) => ({ id: j.id, nome: j.rotulo })),
+    eu: v.eu.rotulo,
+    caixa: v.eu.caixa,
+    prestigio: v.eu.prestigio,
+    aviamento: R.aviamento(v.partida.turno),
+    luxo: R.luxo(v.eu.prestigio),
+    preco: v.partida.preco ?? R.P_BASE[Math.min(v.partida.turno, 12) - 1],
     npcs: R.NPCS.map((n) => ({ id: n.id, nome: n.nome, papel: n.papel })),
     metodos: Object.entries(R.METODOS).map(([id, m]) => ({ id, nome: m.nome, custo: m.custo })),
     contratosRecebidos: v.contratos.filter((c) => c.status === 'proposto' && c.recebo),
     podeReivindicar: v.eu.podeReivindicar,
     estoque: v.eu.estoque,
     votos: v.partida.votos,
+    dicasVistas: v.dicasVistas,
     seringais: v.eu.seringais,
     ordens: v.ordens,
     ordemEnviada: v.ordemEnviada,

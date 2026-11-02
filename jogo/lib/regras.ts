@@ -55,6 +55,9 @@ export const SECRETAS = ['subornar', 'plantar_boato', 'comprar_silencio', 'espio
 export type AbertaId = (typeof ABERTAS)[number]
 export type SecretaId = (typeof SECRETAS)[number]
 
+// Custo de cada ação secreta (₵).
+export const CUSTO_SECRETA: Record<SecretaId, number> = { subornar: 3, plantar_boato: 1, comprar_silencio: 3, espionar: 1, contrabandear: 0 }
+
 export const LIMITE_ABERTAS = 2
 export const LIMITE_SECRETA = 1
 
