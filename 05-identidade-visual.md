@@ -100,7 +100,7 @@ Estas telas cheias usam o espírito do "7–0":
 3. **Números antes de palavras.** "P 8,25 ▼0,75" em vez de "o preço caiu para 8,25".
 4. **Ícones fixos** para recursos e custos: moeda, lote, estrela, ampulheta, punho, flor. Um ícone sempre significa a mesma coisa. São desenhados em SVG de traço fino, nunca emoji.
 5. **Feito para celular.** Navegação inferior com 4 abas (Rio · Bolsa · Praça · Caderno) e um botão flutuante "Ordens" em lacre, com um ponto quando houver pendência.
-6. **Toda tela mostra o prazo do turno:** "Fecha qui 21h · faltam 14h".
+6. **Toda tela mostra o prazo do turno:** "Fecha qui 23h59 · faltam 14h".
 7. **Animação só onde conta:** vapor se movendo, selo trincando, preço caindo. Nada decorativo.
 
 ## 7. Ilustração e retratos

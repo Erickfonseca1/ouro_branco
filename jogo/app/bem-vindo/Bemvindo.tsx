@@ -18,7 +18,7 @@ const PASSOS = [
   },
   {
     titulo: 'Um turno',
-    texto: 'Três turnos por semana: terça, quinta e domingo, às 21h. Você lê a Gazeta, analisa o tabuleiro, conversa por fora e decide. Promessa não vale nada: só vale o contrato registrado no app.',
+    texto: 'Três turnos por semana: terça, quinta e domingo, até 23h59. Você lê a Gazeta, analisa o tabuleiro, conversa por fora e decide. Promessa não vale nada: só vale o contrato registrado no app.',
   },
   {
     titulo: 'Dinheiro e segredos',

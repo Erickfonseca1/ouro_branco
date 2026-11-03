@@ -1,11 +1,11 @@
-// Prazos: terça, quinta e domingo às 21h, em Manaus (UTC-4, sem horário de verão).
+// Prazos: terça, quinta e domingo às 23h59, em Manaus (UTC-4, sem horário de verão).
 const OFFSET_MS = 4 * 3600 * 1000
 const DIAS_TURNO = [0, 2, 4] // domingo, terça, quinta
 
 export function proximoPrazo(depois: Date = new Date()): Date {
   const local = new Date(depois.getTime() - OFFSET_MS)
   for (let i = 0; i <= 7; i++) {
-    const dia = new Date(Date.UTC(local.getUTCFullYear(), local.getUTCMonth(), local.getUTCDate() + i, 21, 0, 0))
+    const dia = new Date(Date.UTC(local.getUTCFullYear(), local.getUTCMonth(), local.getUTCDate() + i, 23, 59, 0))
     const prazo = new Date(dia.getTime() + OFFSET_MS)
     if (DIAS_TURNO.includes(dia.getUTCDay()) && prazo.getTime() > depois.getTime()) return prazo
   }

@@ -81,8 +81,8 @@ O prestígio vai de 0 a 10 e não conta pontos. Ele serve para:
 
 ### 3.1 Calendário
 
-- **3 turnos por semana**, que fecham na terça, quinta e domingo às 21h.
-- O sistema resolve na hora, e a Gazeta e as cartas ficam disponíveis por volta das 21h05.
+- **3 turnos por semana**, que fecham na terça, quinta e domingo às 23h59.
+- O sistema resolve na hora, e a Gazeta e as cartas ficam disponíveis por volta das 00h05.
 - Cada turno equivale a cerca de 2 anos no jogo (1890 a 1912 em 12 turnos).
 - Opcional: um **turno longo** no fim de semana, de sexta a domingo, para grupos com pouco tempo.
 - **Aviso de turno aberto:** o app não envia nada para fora. Alguém do grupo avisa manualmente no WhatsApp quando a Gazeta sai.
@@ -94,7 +94,7 @@ graph LR
     A["Ler: Gazeta e cartas"] --> B["Analisar: Praça e Rio"]
     B --> C["Conversar: grupo e propostas de contrato"]
     C --> D["Decidir: ordens"]
-    D --> E["Resultado às 21h05"]
+    D --> E["Resultado às 00h05"]
     E --> A
     B -.-> F["Tarefas de detetive (opcional)"]
     C -.-> G["Reações rápidas (janela de 12h)"]

@@ -8,7 +8,7 @@ Você recebe um **objetivo secreto em 3 marcos**, mostrado como 3 selos de lacre
 - Com os 3 cumpridos (a partir do turno 8), você **reivindica**. Todos ficam sabendo que foi você, mas não qual é o seu objetivo, e têm **1 turno para derrubar um dos seus marcos**. Se você resistir, vence. Se cair, perde 1★ e tenta de novo depois.
 - Ninguém venceu até o turno 12? Ganha quem tiver mais marcos.
 
-## Um turno (3 por semana: ter, qui e dom, às 21h)
+## Um turno (3 por semana: ter, qui e dom, até 23h59)
 1. **Ler** a Gazeta e as suas cartas.
 2. **Analisar** o tabuleiro: quem visitou quem, quem comprou o quê, para onde vão os vapores.
 3. **Conversar** com quem quiser, por fora do app. **Promessa não vale nada.** Só vale o **contrato registrado no app**.

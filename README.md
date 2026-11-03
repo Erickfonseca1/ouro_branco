@@ -1,6 +1,6 @@
 # Ouro Branco
 
-Jogo de intriga assíncrono para cerca de 8 amigos. A partida se passa em Manaus, durante o Ciclo da Borracha (1890–1912). Cada jogador tem um personagem, um objetivo secreto em três marcos e três turnos por semana (terça, quinta e domingo, às 21h). O sistema age como mestre: não há IA em partida, e todo aviso chega pela caixa de entrada do próprio app.
+Jogo de intriga assíncrono para cerca de 8 amigos. A partida se passa em Manaus, durante o Ciclo da Borracha (1890–1912). Cada jogador tem um personagem, um objetivo secreto em três marcos e três turnos por semana (terça, quinta e domingo, até 23h59). O sistema age como mestre: não há IA em partida, e todo aviso chega pela caixa de entrada do próprio app.
 
 > **Atenção, jogadores:** os arquivos `02-personagens-e-relacoes.md`, `simulador/marcos.json` e `jogo/lib/data/marcos.json` contêm os objetivos secretos. Quem for jogar não deve abri-los.
 
